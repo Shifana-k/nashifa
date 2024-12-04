@@ -25,6 +25,10 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+
+app.use(express.json());
+app.use(express.urlencoded({extended:true}))
+
 app.set('view engine','ejs')
 app.use(express.static(__dirname+'/public'))
 

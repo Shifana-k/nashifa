@@ -62,6 +62,7 @@ const renderHome = async (req,res) => {
         res.render('home')
     } catch (error) {
         console.log(error.message);
+        res.status(500).send("Server Error")
     }
 }
 

@@ -5,7 +5,7 @@ const passport = require('passport')
 
 
 
-const user_route = express()
+const user_route = express.Router()
 const userController = require('../controllers/userController')
 
 user_route.use(
