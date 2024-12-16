@@ -25,6 +25,7 @@
     <link rel="stylesheet" href="/userAssets/css/style.css" type="text/css">
 
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>        <!--https://boxicons.com/ -->
+    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"> -->
     
 </head>
 
@@ -79,15 +80,10 @@
                         <div class="header__top__right">
                             <div class="header__top__links">
                                 <a href="/sign-in">Sign in</a>
-                                <a href="#">FAQs</a>
+                                
                             </div>
                             <div class="header__top__hover">
-                                <span>Usd <i class="arrow_carrot-down"></i></span>
-                                <ul>
-                                    <li>USD</li>
-                                    <li>EUR</li>
-                                    <li>USD</li>
-                                </ul>
+            
                             </div>
                         </div>
                     </div>
@@ -106,17 +102,6 @@
                         <ul>
                             <li class="active"><a href="./">Home</a></li>
                             <li><a href="./shop">Shop</a></li>
-                            <li><a href="#">Pages</a>
-                                <ul class="dropdown">
-                                    <li><a href="./about.html">About Us</a></li>
-                                    <li><a href="./shop-details.html">Shop Details</a></li>
-                                    <li><a href="./shopping-cart.html">Shopping Cart</a></li>
-                                    <li><a href="./checkout.html">Check Out</a></li>
-                                    <li><a href="./blog-details.html">Blog Details</a></li>
-                                </ul>
-                            </li>
-                            <li><a href="./blog.html">Blog</a></li>
-                            <li><a href="./contact.html">Contacts</a></li>
                         </ul>
                     </nav>
                 </div>
@@ -137,13 +122,13 @@
     <div class="container" id="container-signup">
         <!-- Signup Form -->
         <div class="form-container sign-up">
-            <form action="/sign-up" method="POST">
+            <form id="signupForm">
                 <h1>Create Account</h1>
                 <div class="social-icons">
-                    <a href="#" class="icons"><i class='bx bxl-google'></i></a>
+                    <!-- <a href="#" class="icons"><i class='bx bxl-google'></i></a>
                     <a href="#" class="icons"><i class='bx bxl-facebook'></i></a>
                     <a href="#" class="icons"><i class='bx bxl-github'></i></a>
-                    <a href="#" class="icons"><i class='bx bxl-linkedin'></i></a>
+                    <a href="#" class="icons"><i class='bx bxl-linkedin'></i></a> -->
                 </div>
                 <span>Register with E-mail</span>
 
@@ -151,11 +136,27 @@
                     <p style="color: red;"><%= message %></p>
                 <% } %>
 
-                <input type="text" name="name" placeholder="Name" required>
-                <input type="email" name="email" placeholder="Enter E-mail" required>
-                <input type="number" name="mobile" placeholder="Enter mobile number" required>
-                <input type="password" name="password" placeholder="Enter Password" required>
-                <input type="password" name="cpassword" placeholder="Confirm Password" >
+                
+                <input type="text" id="name" name="name" placeholder="Enter your name" >
+                <span id="nameError" class="error-message"></span>
+
+                
+                <input type="email" id="email" name="email" placeholder="Enter your email" >
+                <span id="emailError" class="error-message"></span>
+
+                
+                <input type="text" id="mobile" name="mobile" placeholder="Enter your mobile number" >
+                <span id="mobileError" class="error-message"></span>
+
+                
+                <input type="password" id="password" name="password" placeholder="Enter your password" >
+                <span id="passwordError" class="error-message"></span>
+
+                
+                <input type="password" id="cpassword" name="cpassword" placeholder="Confirm your password" >
+                <span id="cpasswordError" class="error-message"></span>
+
+                <span id="formError" class="error-message"></span>
 
                 <button type="submit">Sign Up</button>
             </form>
@@ -186,6 +187,8 @@
 
 
 <!-- <script src="/userAssets/js/script.js"></script> -->
+<script src="/userAssets/js/signupValidation.js"></script>
+
 <%- include('../layouts/userFooter.ejs') %>
 
 

@@ -742,6 +742,37 @@ ol {
 	transition: all, 0.3s;
 }
 
+/* dropdown */
+/* Remove the dropdown caret/arrow */
+#userDropdown::after {
+    content: none; /* Prevent the default arrow from showing */
+}
+
+/* Maintain the rest of the styles */
+#userDropdown {
+    color: white !important;
+}
+
+.dropdown-menu {
+    background-color: white;
+    border: none;
+}
+
+.dropdown-menu .dropdown-item {
+    color: black;
+}
+
+.dropdown-menu .dropdown-item:hover {
+    background-color: #e53637;
+    color: white;
+}
+
+/* Show dropdown on hover */
+.dropdown:hover .dropdown-menu {
+    display: block;
+    margin-top: 0;
+}
+
 /*---------------------
   Categories
 -----------------------*/
@@ -982,9 +1013,9 @@ ol {
 
 .product__item__pic .label {
 	color: #111111;
-	font-size: 11px;
+	font-size: 9px;
 	font-weight: 700;
-	letter-spacing: 2px;
+	letter-spacing: 1px;
 	text-transform: uppercase;
 	display: inline-block;
 	padding: 4px 15px 2px;

@@ -7,7 +7,8 @@ const userSchema = new mongoose.Schema({
     },
     email:{
         type:String,
-        required:true
+        required:true,
+        unique:true,
     },
     password: {
         type: String, 
@@ -29,7 +30,55 @@ const userSchema = new mongoose.Schema({
         type: Boolean, 
         default: false 
     }, 
-})
+    isBlocked: { 
+        type: Boolean, 
+        default: false 
+    },
+    cart:[{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Cart",
+    }],
+    wallet:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Wishlist",
+    },
+    orderHistory:[{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"Order"
+    }],
+    createdOn: {
+        type:Date,
+        default:Date.now,
+    },
+    referalCode:{
+        type:String
+    },
+    redeemed:{
+        type:Boolean
+    },
+    redeemedUsers:[{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"User"
+    }],
+    searchHistory:[{
+        category:{
+            type:mongoose.Schema.Types.ObjectId,
+            ref:"Category",
+        },
+        brand:{
+            type:String
+        },
+        searchOn:{
+            type:Date,
+            default:Date.now
+        }
+    }],
+    resetToken: String,
+    resetTokenExpiry: Date,
+
+},
+{ timestamps: true }
+)
 
 
 module.exports = mongoose.model('User',userSchema)

@@ -25,6 +25,7 @@
     <link rel="stylesheet" href="/userAssets/css/style.css" type="text/css">
 
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>        <!--https://boxicons.com/ -->
+    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"> -->
     
 </head>
 
@@ -79,15 +80,10 @@
                         <div class="header__top__right">
                             <div class="header__top__links">
                                 <a href="/sign-in">Sign in</a>
-                                <a href="#">FAQs</a>
+                                
                             </div>
                             <div class="header__top__hover">
-                                <span>Usd <i class="arrow_carrot-down"></i></span>
-                                <ul>
-                                    <li>USD</li>
-                                    <li>EUR</li>
-                                    <li>USD</li>
-                                </ul>
+                                
                             </div>
                         </div>
                     </div>
@@ -104,19 +100,9 @@
                 <div class="col-lg-6 col-md-6">
                     <nav class="header__menu mobile-menu">
                         <ul>
-                            <li class="active"><a href="./">Home</a></li>
-                            <li><a href="./shop">Shop</a></li>
-                            <li><a href="#">Pages</a>
-                                <ul class="dropdown">
-                                    <li><a href="./about.html">About Us</a></li>
-                                    <li><a href="./shop-details.html">Shop Details</a></li>
-                                    <li><a href="./shopping-cart.html">Shopping Cart</a></li>
-                                    <li><a href="./checkout.html">Check Out</a></li>
-                                    <li><a href="./blog-details.html">Blog Details</a></li>
-                                </ul>
-                            </li>
-                            <li><a href="./blog.html">Blog</a></li>
-                            <li><a href="./contact.html">Contacts</a></li>
+                            <li class="active"><a href="/">Home</a></li>
+                            <li><a href="/shop">Shop</a></li>
+                            
                         </ul>
                     </nav>
                 </div>
@@ -139,33 +125,43 @@
         <!-- Signup Form -->
         
         <!-- Login Form -->
-        <div class="form-container sign-in">
-            <form action="/login" method="POST">
-                <h1>Sign In</h1>
-                <div class="social-icons">
-                    <a href="/auth/google" class="icons"><i class='bx bxl-google'></i></a>
-                    <a href="#" class="icons"><i class='bx bxl-facebook'></i></a>
-                    <a href="#" class="icons"><i class='bx bxl-github'></i></a>
-                    <a href="#" class="icons"><i class='bx bxl-linkedin'></i></a>
-                </div>
-                <span>Login With Email & Password</span>
-
-                <% if (typeof message !== 'undefined' && message !== '') { %>
-                    <%
-                        let messageColor = message.includes('successfully') ? 'green' : 'red';
-                    %>
-                    <p style="color: <%= messageColor %>">
-                        <%= message %>
-                    </p>
-                <% } %>
-                
-
-                <input type="email" name="email" placeholder="Enter E-mail" required>
-                <input type="password" name="password" placeholder="Enter Password" required>
-                <a href="#">Forget Password?</a>
-                <button type="submit">Sign In</button>
-            </form>
+        <!-- Sign In Form -->
+<div class="form-container sign-in">
+    <form id="signInForm" action="/sign-in" method="POST">
+        <h1>Sign In</h1>
+        <div class="social-icons">
+            <a href="/auth/google" class="icons"><i class='bx bxl-google'></i></a>
+            <!-- <a href="#" class="icons"><i class='bx bxl-facebook'></i></a>
+            <a href="#" class="icons"><i class='bx bxl-github'></i></a>
+            <a href="#" class="icons"><i class='bx bxl-linkedin'></i></a> -->
         </div>
+
+        <% if (message.success && message.success.length > 0) { %>
+            <div class="alert alert-success flash-message" role="alert" style="color: green;background-color: transparent; border: none; outline: none;">
+                <%= message.success %>
+            </div>
+        <% } %>
+        
+        <% if (message.error && message.error.length > 0) { %>
+            <div class="alert alert-danger flash-message" role="alert" style="color: red;background-color: transparent; border: none; outline: none;">
+                <%= message.error %>
+            </div>
+        <% } %>
+        
+        <span>Login With Email & Password</span>
+        <input type="email" id="email" name="email" placeholder="Enter E-mail" >
+        <!-- Email error message -->
+        <span id="emailError" style="color: red;"></span>
+
+        <!-- Password input -->
+        <input type="password" id="password" name="password" placeholder="Enter Password" >
+        <!-- Password error message -->
+        <span id="passwordError" style="color: red;"></span>
+
+        <a href="/forgotPassword">Forget Password?</a>
+        <button type="submit">Sign In</button>
+    </form>
+</div>
 
         <!-- Toggle Panels -->
         <div class="toggle-container">
@@ -192,6 +188,19 @@
 
 
 <!-- <script src="/userAssets/js/script.js"></script> -->
+<% if (messages.success) { %>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                icon: 'success',
+                title: 'Logged Out',
+                text: '<%= messages.success %>',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        });
+    </script>
+<% } %>
 <%- include('../layouts/userFooter.ejs') %>
 
 

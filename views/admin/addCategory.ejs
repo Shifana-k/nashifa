@@ -1,0 +1,45 @@
+<%- include('../layouts/adminHeader') %>
+
+<div class="container" style="margin-left: 120px;">
+  <div class="card" style="margin-left: 120px;">
+    <div class="card-body">
+      <h5 class="card-title mb-4">Add Category</h5>
+      <form action="/admin/insertCategory" method="POST">
+
+        <% if (messages.success) { %>
+          <div class="alert alert-success flash-message" role="alert" style="color: green;" data-timeout="5">
+            <%= messages.success %>
+          </div>
+        <% } %>
+
+        <% if (messages.error) { %>
+          <div class="alert alert-danger flash-message" role="alert" style="color: red;" data-timeout="5">
+            <%= messages.error %>
+          </div>
+        <% } %>
+
+        <div class="mb-3">
+          <label for="categoryName" class="form-label">Category Name</label>
+          <input type="text" class="form-control" id="categoryName" name="name" required>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Add Category</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include('../layouts/adminFooter') %>
+
+<script>
+
+  const flashMessages = document.querySelectorAll('.flash-message[data-timeout]');
+
+  for (const message of flashMessages) {
+    const timeout = parseInt(message.dataset.timeout, 10) * 1000;
+    setTimeout(() => {
+      message.parentNode.removeChild(message);
+    }, timeout);
+  }
+</script>
+ 

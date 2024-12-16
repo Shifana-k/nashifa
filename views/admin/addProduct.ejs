@@ -1,0 +1,405 @@
+<%- include('../layouts/adminHeader') %>
+<!-- <link href="https://cdn.jsdelivr.net/npm/cropperjs@1.5.13/dist/cropper.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.5.13/dist/cropper.min.js"></script> -->
+
+<script defer src="https://cdn.crop.guide/loader/l.js?c=VPCCSG"></script>
+<div class="container" style="margin-left: 120px;">
+  <div class="card" style="margin-left: 120px;">
+    <div class="card-body">
+      <h5 class="card-title mb-4">Add Product</h5>
+      <form action="/admin/insertProduct" method="POST" enctype="multipart/form-data">
+
+        <% if (messages && messages.success) { %>
+          <div class="alert alert-success flash-message" role="alert" style="color: green;" data-timeout="5000">
+            <%= messages.success %>
+          </div>
+        <% } %>
+
+        <% if (messages && messages.error) { %>
+          <div class="alert alert-danger flash-message" role="alert" style="color: red;" data-timeout="5000">
+            <%= messages.error %>
+          </div>
+        <% } %>
+        <div class="mb-3">
+          <label for="productCategory" class="form-label">Category</label>
+          <select class="form-control" id="productCategory" name="category" >
+            <option value="">Select a category</option>
+            <% categoryData.forEach(category => { %>
+              <option value="<%= category._id %>"><%= category.name %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="productName" class="form-label">Product Name</label>
+          <input type="text" class="form-control" id="productName" name="name" >
+        </div>
+
+        <div class="mb-3">
+          <label for="productDescription" class="form-label">Description</label>
+          <textarea class="form-control" id="productDescription" name="description" rows="3" ></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label for="productPrice" class="form-label">Price</label>
+          <input type="number" class="form-control" id="productPrice" name="price" >
+        </div>
+
+        <div class="mb-3">
+          <label for="productQuantity" class="form-label">Quantity</label>
+          <input type="number" class="form-control" id="productQuantity" name="quantity" >
+        </div>
+
+        <div class="mb-3">
+          <label for="mainImage" class="form-label">Main Image</label>
+          <input type="file" class="form-control" id="mainImage" name="mainImage" accept="image/*" onchange="handleCrop(event, 'mainImagePreview', 'mainImageCropped', 'mainImageCropModal')" >
+          <img id="mainImagePreview" src="" alt="Main Image Preview" style="display: none; max-width: 200px; max-height: 150px; object-fit: cover;" />
+          <input type="hidden" id="mainImageCropped" name="mainImageCropped">
+        </div>
+
+
+        <div class="mb-3">
+          <label for="screenshots" class="form-label">Screenshots (max 4)</label>
+          <input type="file" class="form-control" id="screenshots" name="screenshots" accept="image/*" multiple onchange="handleCrop(event, 'screenshotPreview', 'screenshotsCropped', 'screenshotCropModal')">
+          <div id="screenshotPreview" style="display: flex; gap: 10px;"></div>
+          <input type="hidden" id="screenshotsCropped" name="screenshotsCropped">
+        </div>
+
+        <button type="submit" class="btn btn-primary">Add Product</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- Cropping Modal for Main Image -->
+<!-- <div id="mainImageCropModal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <h4>Crop Image</h4>
+    <div id="cropContainer">
+      <img id="cropImage" style="max-width: 100%;" />
+    </div>
+    <button type="button" onclick="cropImage('mainImage')">Crop</button>
+    <button type="button" onclick="closeCropModal('mainImageCropModal')">Cancel</button>
+  </div>
+</div> -->
+
+<!-- Cropping Modal for Screenshots -->
+<!-- <div id="screenshotCropModal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <h4>Crop Screenshot</h4>
+    <div id="cropContainer">
+      <img id="cropImage" style="max-width: 100%;" />
+    </div>
+    <button type="button" onclick="cropImage('screenshots')">Crop</button>
+    <button type="button" onclick="closeCropModal('screenshotCropModal')">Cancel</button>
+  </div>
+</div> -->
+
+<%- include('../layouts/adminFooter') %>
+
+<script>
+  // function previewImage(event, previewId) {
+  //   const preview = document.getElementById(previewId);
+  //   const file = event.target.files[0];
+
+  //   if (file) {
+  //     const reader = new FileReader();
+
+  //     reader.onload = function() {
+  //       preview.src = reader.result;
+  //       preview.style.display = 'block';
+  //     }
+
+  //     reader.readAsDataURL(file);
+  //   } else {
+  //     preview.src = "";
+  //     preview.style.display = 'none';
+  //   }
+  // }
+
+  // function previewImages(event, previewId) {
+  //   const previews = document.getElementById(previewId);
+  //   previews.innerHTML = ''; // Clear previous previews
+
+  //   const files = event.target.files;
+
+  //   for (let i = 0; i < files.length; i++) {
+  //     const file = files[i];
+
+  //     if (file) {
+  //       const reader = new FileReader();
+
+  //       reader.onload = function() {
+  //         const img = document.createElement('img');
+  //         img.src = reader.result;
+  //         img.style.maxWidth = '100px';
+  //         img.style.maxHeight = '100px';
+  //         img.style.objectFit = 'cover';
+  //         img.style.marginRight = '10px';
+  //         previews.appendChild(img);
+  //       }
+
+  //       reader.readAsDataURL(file);
+  //     }
+  //   }
+  // }
+
+  const flashMessages = document.querySelectorAll('.flash-message[data-timeout]');
+
+  flashMessages.forEach(message => {
+    const timeout = parseInt(message.dataset.timeout, 10);
+    setTimeout(() => {
+      message.remove();
+    }, timeout);
+  });
+</script>
+
+
+<script>
+//   let cropper; // Cropper instance
+
+// // Handle Image Cropping
+// const handleCrop = (event, previewId, croppedInputId, modalId) => {
+//     const file = event.target.files[0];
+//     if (file) {
+//         const reader = new FileReader();
+//         reader.onload = function (e) {
+//             const cropModal = document.getElementById(modalId);
+//             const cropImage = document.getElementById('cropImage');
+            
+//             // Set the source for cropping image
+//             cropImage.src = e.target.result;
+//             cropModal.style.display = 'block';
+
+//             // Destroy previous cropper instance if any
+//             if (cropper) cropper.destroy();
+
+//             // Initialize Cropper.js with necessary options
+//             cropper = new Cropper(cropImage, {
+//                 aspectRatio: NaN,  // Allow free aspect ratio
+//                 viewMode: 2,       // Ensure the cropper works within the image boundaries
+//                 scalable: true,    // Allow scaling
+//                 zoomable: true,    // Allow zoom
+//                 rotatable: true,   // Allow rotation
+//                 cropBoxResizable: true,
+//                 minCropBoxWidth: 100,
+//                 minCropBoxHeight: 100,
+//             });
+//         };
+//         reader.readAsDataURL(file);
+//     }
+// };
+
+// // Crop the Image
+// const cropImage = (type) => {
+//     const croppedCanvas = cropper.getCroppedCanvas({
+//         width: 300, // Adjust as needed for image size
+//         height: 300, // Adjust as needed for image size
+//     });
+
+//     const croppedData = croppedCanvas.toDataURL('image/jpeg');
+//     if (type === 'mainImage') {
+//         const preview = document.getElementById('mainImagePreview');
+//         const croppedInput = document.getElementById('mainImageCropped');
+//         preview.src = croppedData;
+//         preview.style.display = 'block';
+//         croppedInput.value = croppedData; // Store cropped data in hidden input
+//     } else if (type === 'screenshots') {
+//         const previewContainer = document.getElementById('screenshotPreview');
+//         const croppedInput = document.getElementById('screenshotsCropped');
+//         const img = document.createElement('img');
+//         img.src = croppedData;
+//         img.style.maxWidth = '100px';
+//         img.style.maxHeight = '100px';
+//         previewContainer.appendChild(img);
+
+//         // Update hidden input for screenshots
+//         const currentData = croppedInput.value ? JSON.parse(croppedInput.value) : [];
+//         currentData.push(croppedData);
+//         croppedInput.value = JSON.stringify(currentData);
+//     }
+//     closeCropModal(type === 'mainImage' ? 'mainImageCropModal' : 'screenshotCropModal');
+// };
+
+// // Close Crop Modal
+// const closeCropModal = (modalId) => {
+//     document.getElementById(modalId).style.display = 'none';
+//     if (cropper) cropper.destroy(); // Destroy the cropper instance
+// };
+
+
+
+
+
+
+
+
+
+// const handleScreenshotCrop = (event, previewId, croppedInputId, modalId) => {
+//     const file = event.target.files[0];
+//     if (file) {
+//         const reader = new FileReader();
+//         reader.onload = function (e) {
+//             const cropModal = document.getElementById(modalId);
+//             const cropImage = document.getElementById('cropImage');
+            
+//             // Set the source for cropping image
+//             cropImage.src = e.target.result;
+//             cropModal.style.display = 'block';
+
+//             // Destroy previous cropper instance if any
+//             if (cropper) cropper.destroy();
+
+//             // Initialize Cropper.js with necessary options
+//             cropper = new Cropper(cropImage, {
+//                 aspectRatio: NaN,  // Allow free aspect ratio
+//                 viewMode: 2,       // Ensure the cropper works within the image boundaries
+//                 scalable: true,    // Allow scaling
+//                 zoomable: true,    // Allow zoom
+//                 rotatable: true,   // Allow rotation
+//                 cropBoxResizable: true,
+//                 minCropBoxWidth: 100,
+//                 minCropBoxHeight: 100,
+//             });
+//         };
+//         reader.readAsDataURL(file);
+//     }
+// };
+
+// const cropScreenshot = () => {
+//     const croppedCanvas = cropper.getCroppedCanvas({
+//         width: 300,  // Adjust as needed for image size
+//         height: 300, // Adjust as needed for image size
+//     });
+
+//     const croppedData = croppedCanvas.toDataURL('image/jpeg');
+//     const previewContainer = document.getElementById('screenshotPreview');
+//     const img = document.createElement('img');
+//     img.src = croppedData;
+//     img.style.maxWidth = '100px';
+//     img.style.maxHeight = '100px';
+//     previewContainer.appendChild(img);
+
+//     const croppedInput = document.getElementById('screenshotsCropped');
+//     const currentData = croppedInput.value ? JSON.parse(croppedInput.value) : [];
+//     currentData.push(croppedData);
+//     croppedInput.value = JSON.stringify(currentData);
+
+//     closeCropModal('screenshotCropModal');
+// };
+
+
+
+let cropper; // Cropper instance
+let currentCropperId = null; // To track which image is being cropped
+let currentScreenshotIndex = null; // To track the screenshot index
+
+let screenshotsData = []; // To store the cropped images data
+
+const handleCrop = (event, previewId, croppedInputId, modalPrefix, screenshotIndex = null) => {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            // Dynamically create a modal for the cropped image
+            const modalId = `${modalPrefix}_modal_${Date.now()}`;
+            const cropModal = document.createElement('div');
+            cropModal.id = modalId;
+            cropModal.classList.add('modal');
+            cropModal.style.display = 'block';
+
+            // Create the modal content
+            const modalContent = `
+              <div class="modal-content">
+                <h4>Crop Image</h4>
+                <div id="cropContainer">
+                  <img id="cropImage_${modalId}" style="max-width: 100%;" />
+                </div>
+                <button type="button" onclick="cropImage('${modalId}', '${previewId}', '${croppedInputId}', ${screenshotIndex})">Crop</button>
+                <button type="button" onclick="closeCropModal('${modalId}')">Cancel</button>
+              </div>
+            `;
+            cropModal.innerHTML = modalContent;
+
+            document.body.appendChild(cropModal);
+
+            const cropImage = document.getElementById(`cropImage_${modalId}`);
+            cropImage.src = e.target.result;
+
+            // Destroy previous cropper instance, if any
+            if (cropper) cropper.destroy();
+
+            // Initialize Cropper.js with the image
+            cropper = new Cropper(cropImage, {
+                aspectRatio: NaN, // Free aspect ratio
+                viewMode: 2,
+                scalable: true,
+                zoomable: true,
+                rotatable: true,
+                cropBoxResizable: true,
+                minCropBoxWidth: 100,
+                minCropBoxHeight: 100,
+            });
+
+            // Assign current cropper to track which image is being cropped
+            currentCropperId = modalId;
+            currentScreenshotIndex = screenshotIndex;
+        };
+        reader.readAsDataURL(file);
+    }
+};
+
+const cropImage = (modalId, previewId, croppedInputId, screenshotIndex) => {
+    const croppedCanvas = cropper.getCroppedCanvas({
+        width: 300,  // Adjust as needed
+        height: 300, // Adjust as needed
+    });
+
+    const croppedData = croppedCanvas.toDataURL('image/jpeg');
+    const previewContainer = document.getElementById(previewId);
+    const croppedInput = document.getElementById(croppedInputId);
+
+    // For main image
+    if (previewId === 'mainImagePreview') {
+        const preview = document.getElementById('mainImagePreview');
+        preview.src = croppedData;
+        preview.style.display = 'block';
+        croppedInput.value = croppedData;
+    } else {
+        // For screenshots, add preview dynamically
+        const img = document.createElement('img');
+        img.src = croppedData;
+        img.style.maxWidth = '100px';
+        img.style.maxHeight = '100px';
+        previewContainer.appendChild(img);
+
+        // Add to hidden input value (store all cropped screenshots as an array)
+        const currentData = croppedInput.value ? JSON.parse(croppedInput.value) : [];
+        currentData[screenshotIndex] = croppedData; // Update the specific screenshot
+        croppedInput.value = JSON.stringify(currentData);
+    }
+
+    // Close the crop modal after cropping
+    closeCropModal(modalId);
+};
+
+// Close the Crop Modal
+const closeCropModal = (modalId) => {
+    const cropModal = document.getElementById(modalId);
+    if (cropModal) {
+        cropModal.style.display = 'none';
+        document.body.removeChild(cropModal); // Remove the modal from DOM
+    }
+
+    if (cropper) {
+        cropper.destroy(); // Destroy the cropper instance after closing
+    }
+};
+
+
+
+
+
+
+</script>

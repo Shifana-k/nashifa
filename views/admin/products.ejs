@@ -1,0 +1,202 @@
+<%- include('../layouts/adminHeader') %>
+
+<div class="container" style="margin-left: 120px;">
+  <div class="text-end mt-3">
+    <button class="btn btn-primary" onclick="handleAddProduct()" data-bs-toggle="tooltip" data-bs-placement="top" title="Add Product">
+      <i class="bx bx-plus-circle"></i> Add Product
+    </button>
+  </div>
+
+  <div class="card" style="margin-left: 120px;">
+    <div class="card-body">
+      <% if (messages.success) { %>
+        <div class="alert alert-success flash-message" role="alert" style="color: green;" data-timeout="5">
+          <%= messages.success %>
+        </div>
+      <% } %>
+
+      <% if (messages.error) { %>
+        <div class="alert alert-danger flash-message" role="alert" style="color: red;" data-timeout="5">
+          <%= messages.error %>
+        </div>
+      <% } %>
+
+      <h5 class="card-title mb-4">Products</h5>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Image</th>
+              <!-- <th>Description</th> -->
+              <th>Stock</th>
+              <th>Status</th>
+              <th style="width: 120px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% productData.forEach((product) => { %>
+              <tr id="product-row-<%= product._id %>">
+                <td><%= product.name %></td>
+                <td>
+                  <div class="product-image-container">
+                    <img 
+                      src="<%= process.env.BASE_URL %>/uploads/products/<%= product.mainImage %>" 
+                      alt="<%= product.name %>" 
+                      class="img-fluid rounded product-thumbnail"
+                    >
+                  </div>
+                </td>
+                <td><%= product.quantity %></td>
+                <td>
+                  <span 
+                    id="product-status-<%= product._id %>" 
+                    class="badge <%= product.is_listed ? 'bg-success' : 'bg-secondary' %>"
+                  >
+                    <%= product.is_listed ? 'Listed' : 'Unlisted' %>
+                  </span>
+                </td>
+                <td class="text-center">
+                  <div class="btn-group" role="group">
+                    <button 
+                      id="toggle-status-btn-<%= product._id %>"
+                      onclick="toggleProductStatus('<%= product._id %>', <%= product.is_listed %>)"
+                      class="btn <%= product.is_listed ? 'btn-warning' : 'btn-success' %>"
+                      data-bs-toggle="tooltip" 
+                      title="<%= product.is_listed ? 'Unlist' : 'List' %>"
+                    >
+                      <i class="bx <%= product.is_listed ? 'bx-hide' : 'bx-show' %>"></i>
+                    </button>
+                    <button 
+                      onclick="handleEditProduct('<%= product._id %>')" 
+                      class="btn btn-primary"
+                      data-bs-toggle="tooltip" 
+                      title="Edit Product"
+                    >
+                      <i class="bx bx-edit-alt"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../layouts/adminFooter') %>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize tooltips
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+  var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+  });
+
+  // Auto-dismiss flash messages
+  const flashMessages = document.querySelectorAll('.alert');
+  flashMessages.forEach(message => {
+    setTimeout(() => {
+      const bsAlert = bootstrap.Alert.getInstance(message) || new bootstrap.Alert(message);
+      bsAlert.close();
+    }, 5000);
+  });
+});
+
+async function toggleProductStatus(productId, currentStatus) {
+  try {
+    const action = currentStatus ? 'unlist' : 'list';
+    const result = await Swal.fire({
+      title: `Are you sure you want to ${action} this product?`,
+      text: "You can change this later if needed.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: action === 'list' ? '#28a745' : '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: `Yes, ${action} it!`
+    });
+
+    if (result.isConfirmed) {
+      const endpoint = `/admin/${action}Product`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ productId })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        updateProductStatusUI(productId, !currentStatus);
+        Swal.fire(
+          'Success!', 
+          `Product ${action}ed successfully.`, 
+          'success'
+        );
+      } else {
+        throw new Error(data.error || 'Failed to update product status');
+      }
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    Swal.fire('Error', error.message, 'error');
+  }
+}
+
+function updateProductStatusUI(productId, isListed) {
+  const statusBadge = document.getElementById(`product-status-${productId}`);
+  const toggleButton = document.getElementById(`toggle-status-btn-${productId}`);
+
+  if (statusBadge && toggleButton) {
+    statusBadge.textContent = isListed ? 'Listed' : 'Unlisted';
+    statusBadge.className = `badge ${isListed ? 'bg-success' : 'bg-secondary'}`;
+    
+    toggleButton.className = `btn ${isListed ? 'btn-warning' : 'btn-success'}`;
+    toggleButton.setAttribute('title', isListed ? 'Unlist' : 'List');
+    
+    const icon = toggleButton.querySelector('i');
+    icon.className = `bx ${isListed ? 'bx-hide' : 'bx-show'}`;
+  }
+}
+
+function handleAddProduct() {
+  window.location.href = '/admin/addProduct';
+}
+
+function handleEditProduct(productId) {
+  window.location.href = `/admin/editProduct?id=${productId}`;
+}
+
+
+</script>
+
+<style>
+.product-image-container {
+  width: 80px;
+  height: 80px;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.product-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.product-thumbnail:hover {
+  transform: scale(1.1);
+}
+
+.btn-group .btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+</style>

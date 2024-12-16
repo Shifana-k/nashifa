@@ -239,3 +239,20 @@ font-weight: 700;
     right: 0;
     transform: translateX(0);
 }
+
+/* Add these styles to your CSS file */
+button#resendOtpButton {
+    background-color: rgb(219, 69, 69);
+    color: white;
+    border: none;
+    cursor: pointer;
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+button#resendOtpButton:disabled {
+    background-color: grey;
+    cursor: not-allowed;
+}

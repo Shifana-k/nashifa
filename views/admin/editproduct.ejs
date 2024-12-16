@@ -1,0 +1,217 @@
+<%- include('../layouts/adminheader') %>
+
+<div class="container" style="margin-left: 120px;">
+  <div class="card" style="margin-left: 120px;">
+    <div class="card-body">
+      <h5 class="card-title mb-4">Edit Product</h5>
+      <div id="flash-messages"></div> <!-- Flash messages container -->
+
+      <form id="updateProductForm" enctype="multipart/form-data" method="POST" action="/admin/updateProduct/<%= productData._id %>">
+
+        <input type="hidden" value="<%= productData._id %>">
+        
+        <!-- Flash messages for success and error -->
+        <% if (messages && messages.success) { %>
+          <div class="alert alert-success flash-message" role="alert" style="color: green;" data-timeout="5000">
+            <%= messages.success %>
+          </div>
+        <% } %>
+
+        <% if (messages && messages.error) { %>
+          <div class="alert alert-danger flash-message" role="alert" style="color: red;" data-timeout="5000">
+            <%= messages.error %>
+          </div>
+        <% } %>
+        
+        <!-- Category selection -->
+        <div class="mb-3">
+          <label for="productCategory" class="form-label">Category</label>
+          <select class="form-control" id="productCategory" name="category" required>
+            <option value="">Select a category</option>
+            <% if (categoryData && categoryData.length > 0) { %>
+              <% categoryData.forEach(category => { %>
+                <option value="<%= category._id %>" <% if (productData.category && productData.category.toString() === category._id.toString()) { %> selected <% } %>><%= category.name %></option>
+              <% }) %>
+            <% } %>
+          </select>
+        </div>
+
+        <!-- Product name -->
+        <div class="mb-3">
+          <label for="productName" class="form-label">Product Name</label>
+          <input type="text" class="form-control" id="productName" name="name" required value="<%= productData.name %>">
+        </div>
+
+        <!-- Product description -->
+        <div class="mb-3">
+          <label for="productDescription" class="form-label">Description</label>
+          <textarea class="form-control" id="productDescription" name="description" rows="3" required><%= productData.description %></textarea>
+        </div>
+
+        <!-- Product price -->
+        <div class="mb-3">
+          <label for="productPrice" class="form-label">Price</label>
+          <input type="number" class="form-control" id="productPrice" name="price" required value="<%= productData.price %>">
+        </div>
+
+        <!-- Product quantity -->
+        <div class="mb-3">
+          <label for="productQuantity" class="form-label">Quantity</label>
+          <input type="number" class="form-control" id="productQuantity" name="quantity" required value="<%= productData.quantity %>">
+        </div>
+
+        <!-- Main image -->
+        <div class="mb-3">
+          <label for="mainImage" class="form-label">Main Image</label>
+          <% if (productData.mainImage) { %>
+            <div>
+              <img src="/uploads/products/<%= productData.mainImage %>" alt="Main Image" style="max-width: 200px; max-height: 150px; object-fit: cover;">
+              <button type="button" class="btn btn-danger btn-sm" onclick="removeImage('mainImage')">Remove</button>
+            </div>
+          <% } else { %>
+            <span>No image available</span>
+          <% } %>
+          <input type="file" class="form-control" id="mainImage" name="mainImage" accept="image/*" onchange="previewImage(event, 'mainImagePreview')">
+          <img id="mainImagePreview" src="" alt="Main Image Preview" style="max-width: 200px; max-height: 150px; object-fit: cover; display: none;" />
+        </div>
+
+        <!-- Screenshots -->
+        <div class="mb-3">
+          <label for="screenshots" class="form-label">Screenshots (max 4)</label>
+          <div id="screenshotPreviews" class="d-flex flex-wrap mt-2">
+            <% if (productData.screenshots && productData.screenshots.length > 0) { %>
+              <% productData.screenshots.forEach(screenshot => { %>
+                <img src="/uploads/products/<%= screenshot %>" style="max-width: 100px; max-height: 100px; object-fit: cover; margin-right: 10px;">
+              <% }) %>
+            <% } %>
+          </div>
+          <input type="file" class="form-control" id="screenshots" name="screenshots" accept="image/*" multiple onchange="previewImages(event, 'screenshotPreviews')">
+        </div>
+
+        <button type="submit" class="btn btn-primary" >Update Product</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include('../layouts/adminfooter') %>
+<script defer src="https://cdn.crop.guide/loader/l.js?c=VPCCSG"></script>
+<script>
+  function previewImage(event, previewId) {
+    const preview = document.getElementById(previewId);
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function() {
+        preview.src = reader.result;
+        preview.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    } else {
+      preview.src = '';
+      preview.style.display = 'none';
+    }
+  }
+
+  function previewImages(event, previewId) {
+    const previews = document.getElementById(previewId);
+    previews.innerHTML = ''; // Clear existing previews
+    const files = event.target.files;
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function() {
+          const img = document.createElement('img');
+          img.src = reader.result;
+          img.style.maxWidth = '100px';
+          img.style.maxHeight = '100px';
+          img.style.objectFit = 'cover';
+          img.style.marginRight = '10px';
+          previews.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  }
+
+  function removeImage(imageId) {
+  console.log('Removing image...');
+  const imageElement = document.getElementById(imageId);
+  
+  // Remove the parent container of the image, which contains both the image and the remove button
+  imageElement.parentNode.parentNode.removeChild(imageElement.parentNode);
+}
+
+
+  // Flash messages handling
+  const flashMessagesContainer = document.getElementById('flash-messages');
+
+  function clearFlashMessages() {
+    while (flashMessagesContainer.firstChild) {
+      flashMessagesContainer.removeChild(flashMessagesContainer.firstChild);
+    }
+  }
+
+  function displayFlashMessage(type, message) {
+    clearFlashMessages(); 
+
+    const flashMessage = document.createElement('div');
+    flashMessage.classList.add('alert', `alert-${type}`);
+    flashMessage.setAttribute('role', 'alert');
+    flashMessage.textContent = message;
+    flashMessage.dataset.timeout = 5; 
+    flashMessage.classList.add('fade-in'); 
+
+    flashMessagesContainer.appendChild(flashMessage);
+
+    setTimeout(() => {
+      flashMessage.classList.add('fade-out'); 
+      flashMessage.addEventListener('transitionend', () => {
+        flashMessage.parentNode.removeChild(flashMessage);
+      });
+    }, flashMessage.dataset.timeout * 1000);
+  }
+
+  // Form submission handling
+  const form = document.getElementById('updateProductForm');
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      try {
+        const formData = new FormData(form);
+
+        const response = await fetch(form.action, {
+          method: 'PUT',
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json(); // Parse response as JSON
+          displayFlashMessage('danger', errorData.error || 'An error occurred while updating the product');
+        } else {
+          const responseData = await response.json();
+          displayFlashMessage('success', responseData.message);
+
+          setTimeout(() => {
+            window.location.href = responseData.redirect || '/admin/products';
+          }, 1500);
+        }
+      } catch (error) {
+        console.error(error);
+        displayFlashMessage('danger', 'An error occurred while updating the product');
+      }
+    });
+  }
+
+  const flashMessages = document.querySelectorAll('.flash-message[data-timeout]');
+
+  flashMessages.forEach(message => {
+    const timeout = parseInt(message.dataset.timeout, 10);
+    setTimeout(() => {
+      message.remove();
+    }, timeout);
+  });
+</script>

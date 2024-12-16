@@ -1,0 +1,154 @@
+<%- include('../layouts/adminHeader') %>
+
+<div class="container-fluid" style="margin-left: 15rem; margin-top: 10px;">
+  <div class="row">
+    <div class="col-12">
+      <!-- Order details -->
+      <div class="card shadow mb-4">
+        <div class="card-header bg-secondary text-white">
+          <h4 class="card-title mb-0">Order Details</h4>
+        </div>
+        <div class="card-body">
+          <div class="row mb-3">
+            
+            <div class="col-md-3"><strong>Order ID:</strong> <%= order._id %></div>
+            <div class="col-md-3"><strong>Customer Name:</strong> <%= order.userId.name %></div>
+            <div class="col-md-3">
+              <strong>Order Status:</strong>
+              <span class="badge status-label <%= product.status.toLowerCase() %>"><%= product.status %></span>
+            </div>
+            
+            <div class="col-md-3" style="margin-top: 10px;">
+              <form id="updateProductStatusForm" action="/admin/updateProductStatus" method="POST">
+                <div class="input-group">
+                  <input type="hidden" name="orderId" value="<%= order._id %>">
+                  <input type="hidden" name="productId" value="<%= product.productId._id %>">
+                  <select class="form-select" id="productStatus" name="productStatus">
+                    <option value="pending" <%= product.status === 'pending' ? 'selected' : '' %>>Pending</option>
+                    <option value="confirmed" <%= product.status === 'confirmed' ? 'selected' : '' %>>Confirmed</option>
+                    <option value="shipped" <%= product.status === 'shipped' ? 'selected' : '' %>>Shipped</option>
+                    <option value="delivered" <%= product.status === 'delivered' ? 'selected' : '' %>>Delivered</option>
+                    <option value="cancelled" <%= product.status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
+                  </select>
+                  <button type="submit" class="btn btn-secondary">Update</button>
+                </div>
+              </form>
+            </div>
+            <div class="col-md-3"><strong>Payment Method:</strong> <%= order.paymentMethod %></div>
+          </div>
+          <% if (order.deliveryAddress) { %>
+          <h5 class="mt-4">Delivery Address</h5>
+          <p><%= order.deliveryAddress.address %>, <%= order.deliveryAddress.locality %>, <%= order.deliveryAddress.city %>, <%= order.deliveryAddress.state %>, <%= order.deliveryAddress.pincode %></p>
+          <% } else { %>
+            <h5 class="mt-4">Delivery Address</h5>
+            <p>Delivery address not available</p>
+          <% } %>
+          <h5 class="mt-4">Product Details</h5>
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+              <thead class="table-light">
+                <tr>
+                  <th>Product</th>
+                  <th>Quantity</th>
+                  <th>Price</th>
+                  <th>Total</th>
+                  <th>Discount</th>
+                  <th>Delivery Charge</th>
+                  <th>Order Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="product-image me-3">
+                        <img src="<%= process.env.BASE_URL %>/uploads/products/<%= product.productId.mainImage %>" alt="<%= product.productId.name %> image">
+                      </div>
+                      <div><%= product.productId.name %></div>
+                    </div>
+                  </td>
+                  <td><%= product.quantity %></td>
+                  <td><%= product.priceAtPurchase %></td>
+                  <td><%= product.totalProductAmount %></td>
+                  <td><%= (product.priceAtPurchase - product.discountedPrice) * product.quantity %></td>
+                  <td><%= order.deliveryCharge %></td>
+                  <td>
+                    <% if (order.deliveryCharge) { %>
+                      <%= order.orderAmount %>
+                    <% } else if (product.discountedPrice) { %>
+                      <%= product.discountedPrice*product.quantity %>
+                    <% } else { %>
+                      <%= product.totalProductAmount*product.quantity %>
+                    <% } %>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../layouts/adminFooter') %>
+
+<style>
+  .status-label {
+    padding: 0.25em 0.6em;
+    font-size: 0.75em;
+    font-weight: bold;
+    text-transform: uppercase;
+    border-radius: 0.25rem;
+  }
+  .status-label.pending { background-color: #ffc107; color: #000; }
+  .status-label.confirmed { background-color: #0dcaf0; color: #000; }
+  .status-label.shipped { background-color: #6c757d; color: #fff; }
+  .status-label.delivered { background-color: #198754; color: #fff; }
+  .status-label.cancelled, .status-label.returned { background-color: #dc3545; color: #fff; }
+
+  .product-image {
+    width: 60px;
+    height: 60px;
+    overflow: hidden;
+    border-radius: 4px;
+  }
+
+  .product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .table th, .table td {
+    vertical-align: middle;
+  }
+</style>
+
+<script>
+  document.getElementById('updateProductStatusForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    const orderId = document.querySelector('input[name="orderId"]').value;
+    const productId = document.querySelector('input[name="productId"]').value;
+    const productStatus = document.getElementById('productStatus').value;
+
+    fetch('/admin/updateProductStatus', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ orderId, productId, productStatus })
+    })
+    .then(response => {
+      if (response.ok) {
+        window.location.reload();
+      } else {
+        throw new Error('Failed to update product status');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
+  });
+</script>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Placed</title>
+  <link rel="stylesheet" href="/css/style.css"> <!-- Include your stylesheet -->
+  <style>
+    .order-placed-container {
+      text-align: center;
+      margin: 50px auto;
+      max-width: 600px;
+      padding: 20px;
+      background-color: #f9f9f9;
+      border-radius: 10px;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .success-animation {
+      font-size: 100px;
+      color: #4CAF50;
+      animation: bounce 1.5s ease-in-out infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-20px);
+      }
+    }
+
+    .message {
+      font-size: 24px;
+      color: #333;
+      margin-top: 20px;
+    }
+
+    .sub-message {
+      font-size: 16px;
+      color: #666;
+      margin: 10px 0 30px;
+    }
+
+    .continue-btn {
+      background-color: #4CAF50;
+      color: white;
+      padding: 12px 20px;
+      font-size: 18px;
+      text-decoration: none;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+
+    .continue-btn:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <!-- Include header -->
+  <%- include('../layouts/userHeader'); %>
+
+  <div class="order-placed-container">
+    <div class="success-animation">✔</div>
+    <div class="message">Thank you for your purchase!</div>
+    <div class="sub-message">Your order has been placed successfully.</div>
+    <a href="/shop" class="continue-btn">Continue Shopping</a>
+    <a href="/myOrders" class="continue-btn">Go To Orders</a>
+
+  </div>
+
+  <!-- Include footer -->
+  <%- include('../layouts/userFooter'); %>
+</body>
+</html>

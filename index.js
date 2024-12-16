@@ -4,6 +4,8 @@ const dotenv = require('dotenv')
 dotenv.config()
 
 const session = require('express-session');
+const flash = require('express-flash');
+
 const passport = require('passport');
 require('./middlewares/passport-config'); 
 
@@ -18,13 +20,15 @@ app.use(
     session({
         secret: 'sessionSecret', 
         resave: false, 
-        saveUninitialized: false, 
+        saveUninitialized: true, 
     })
 );
 
 app.use(passport.initialize());
 app.use(passport.session());
 
+
+app.use(flash());
 
 app.use(express.json());
 app.use(express.urlencoded({extended:true}))
