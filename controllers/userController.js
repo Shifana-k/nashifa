@@ -761,7 +761,6 @@ const renderProductDetails = async (req, res) => {
                     console.error("Error during session destruction:", err);
                     return res.status(500).send("Failed to logout. Please try again.");
                 }
-                req.flash('success', 'You have been logged out successfully');
                 res.redirect('/sign-in'); 
             });
         } catch (error) {

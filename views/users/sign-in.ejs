@@ -188,19 +188,9 @@
 
 
 <!-- <script src="/userAssets/js/script.js"></script> -->
-<% if (messages.success) { %>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            Swal.fire({
-                icon: 'success',
-                title: 'Logged Out',
-                text: '<%= messages.success %>',
-                showConfirmButton: false,
-                timer: 2000
-            });
-        });
-    </script>
-<% } %>
+<script src="/userAssets/js/signinValidation.js"></script>
+
+
 <%- include('../layouts/userFooter.ejs') %>
 
 

@@ -20,7 +20,7 @@ app.use(
     session({
         secret: 'sessionSecret', 
         resave: false, 
-        saveUninitialized: true, 
+        saveUninitialized: false, 
     })
 );
 
