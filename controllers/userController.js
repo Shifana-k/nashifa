@@ -619,15 +619,77 @@ const resendOtp = async (req, res) => {
 // }
 
 
-const generateProductFilter = (search, category, unblockedCategoryIds) => {
+const generateProductFilter = async (search, category, unblockedCategoryIds, filters) => {
     let filter = { is_listed: true, category: { $in: unblockedCategoryIds } };
-  
+
+
     if (search) {
       filter.name = { $regex: search, $options: "i" }; // Case-insensitive search
     }
   
     if (category && category !== "all") {
-      filter.category = category;
+        try {
+
+            const foundCategory = await Category.findOne({ name: { $regex: new RegExp(`^${category}$`, 'i') }, is_listed: true });
+            if (foundCategory) {
+                filter.category = foundCategory._id;
+            } else {
+                // If no category found, log it and keep the original filter
+                console.log(`No category found for name: ${category}`);
+            }
+
+        } catch (error) {
+            console.error("Error finding category:", error);
+        }
+    }
+    if (filters.branding && filters.branding.length > 0) {
+        filter.branding = { $in: filters.branding };
+    }
+
+    if (filters.priceRange) {
+        
+        // Handle different price range formats
+        const priceRangeParts = filters.priceRange.split('-').map(p => p.replace(/[^\d.]/g, ''));
+        
+
+        if (priceRangeParts.length === 2) {
+            const minPrice = parseFloat(priceRangeParts[0]);
+            const maxPrice = priceRangeParts[1] === '' || priceRangeParts[1] === '+' 
+                ? null 
+                : parseFloat(priceRangeParts[1]);
+
+
+            if (maxPrice !== null) {
+                filter.price = {
+                    $gte: minPrice,
+                    $lte: maxPrice
+                };
+            } else {
+                filter.price = {
+                    $gte: minPrice // Only minimum price for open-ended ranges
+                };
+            }
+        } else if (priceRangeParts.length === 1) {
+            // If it's just a single price (e.g., '5000+')
+            const minPrice = parseFloat(priceRangeParts[0]);
+    
+    
+            filter.price = {
+                $gte: minPrice // Only minimum price for open-ended ranges
+            };
+        }
+    }
+
+    if (filters.size && filters.size.length > 0) {
+        filter.size = { $in: filters.size };
+    }
+
+    if (filters.colors && filters.colors.length > 0) {
+        filter.color = { $in: filters.colors };
+    }
+
+    if (filters.tags && filters.tags.length > 0) {
+        filter.tags = { $all: filters.tags }; // Match all specified tags
     }
   
     return filter;
@@ -683,14 +745,31 @@ const generateProductFilter = (search, category, unblockedCategoryIds) => {
 const renderShop = async (req, res) => {
     try {
       const user = req.session.user_id ? await User.findById(req.session.user_id) : null;
-      const { sortBy, search, category, page = 1 } = req.query;
+      const { sortBy, search, category, page = 1, branding, priceRange, size, colors, tags } = req.query;
       const limit = 9; // Number of products per page
   
       const categories = await Category.find({ is_listed: true });
+
+      for (const category of categories) {
+        const productCount = await Products.countDocuments({ 
+            category: category._id, 
+        is_listed: true // Count only listed products
+        });
+        category.productCount = productCount; // Attach the product count to the category
+    }
       const unblockedCategoryIds = categories.map((cat) => cat._id);
   
+      // Parse filters from query parameters
+      const filters = {
+        branding: branding ? branding.split(",") : [],
+        priceRange,
+        size: size ? size.split(",") : [],
+        colors: colors ? colors.split(",") : [],
+        tags: tags ? tags.split(",") : [],
+    };
+
       // Generate filter for product search
-      const filter = generateProductFilter(search, category, unblockedCategoryIds);
+      const filter = await generateProductFilter(search, category, unblockedCategoryIds, filters);
   
       // Fetch and enhance product data
       const { enhancedProducts, totalProducts } = await fetchAndEnhanceProducts(
@@ -708,6 +787,9 @@ const renderShop = async (req, res) => {
         search,
         currentPage: parseInt(page),
         totalPages,
+        filters,
+        totalProducts,
+        limit, 
       };
   
       res.render("shop", { user, renderData, sortBy });

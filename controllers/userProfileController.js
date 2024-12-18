@@ -18,7 +18,7 @@ const renderProfile = async(req,res)=>{
             return res.render('profile', { userData: { name: 'Not Provided', email: 'Not Provided', mobile: 'Not Provided' } });
         }
 
-        res.render('profile',{userData});
+        res.render('profile',{user: userData, userData});
 
     } catch (error) {
         console.log(error.message);
@@ -105,7 +105,7 @@ const renderAddress = async(req,res)=>{
         }
 
         const addresses = await Address.find({userId});
-        res.render('address',{userData,addresses})
+        res.render('address',{userData,addresses,user:userData})
     } catch (error) {
         console.log(error.message);
     }
@@ -283,7 +283,7 @@ const renderMyOrder = async(req,res)=>{
               .populate('orderedItem.productId')
               .populate('deliveryAddress');
             
-            res.render('myorders', { orderData, userData: user });
+            res.render('myorders', { orderData, userData: user,user });
           } else {
             res.redirect('/sign-in');
           }

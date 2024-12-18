@@ -43,15 +43,9 @@
                                     <div class="card-body">
                                         <div class="shop__sidebar__categories">
                                             <ul class="nice-scroll">
-                                                <li><a href="#">Men (20)</a></li>
-                                                <li><a href="#">Women (20)</a></li>
-                                                <li><a href="#">Bags (20)</a></li>
-                                                <li><a href="#">Clothing (20)</a></li>
-                                                <li><a href="#">Shoes (20)</a></li>
-                                                <li><a href="#">Accessories (20)</a></li>
-                                                <li><a href="#">Kids (20)</a></li>
-                                                <li><a href="#">Kids (20)</a></li>
-                                                <li><a href="#">Kids (20)</a></li>
+                                                <% renderData.categories.forEach(function(category) { %>
+                                                    <li><a href="/shop?category=<%= category.name %>"><%= category.name %> (<%= category.productCount %>)</a></li>
+                                                <% }); %>
                                             </ul>
                                         </div>
                                     </div>
@@ -82,12 +76,12 @@
                                     <div class="card-body">
                                         <div class="shop__sidebar__price">
                                             <ul>
-                                                <li><a href="#">$0.00 - $50.00</a></li>
-                                                <li><a href="#">$50.00 - $100.00</a></li>
-                                                <li><a href="#">$100.00 - $150.00</a></li>
-                                                <li><a href="#">$150.00 - $200.00</a></li>
-                                                <li><a href="#">$200.00 - $250.00</a></li>
-                                                <li><a href="#">250.00+</a></li>
+                                                <li><a href="/shop?priceRange=0-100">$0.00 - $100.00</a></li>
+                                                <li><a href="/shop?priceRange=100-500">$100.00 - $500.00</a></li>
+                                                <li><a href="/shop?priceRange=500-1000">$500.00 - $1000.00</a></li>
+                                                <li><a href="/shop?priceRange=1000-1500">$1000.00 - $1500.00</a></li>
+                                                <li><a href="/shop?priceRange=1500-5000">$1500.00 - $5000.00</a></li>
+                                                <li><a href="/shop?priceRange=5000+">$5000.00+</a></li>
                                             </ul>
                                         </div>
                                     </div>
@@ -193,7 +187,11 @@
                     <div class="row">
                         <div class="col-lg-6 col-md-6 col-sm-6">
                             <div class="shop__product__option__left">
-                                <p>Showing 1–12 of 126 results</p>
+                                <p>
+                                    Showing <%= (renderData.currentPage - 1) * renderData.limit + 1 %> - 
+                                    <%= Math.min(renderData.currentPage * renderData.limit, renderData.totalProducts) %> of 
+                                    <%= renderData.totalProducts %> results
+                                </p>
                             </div>
                         </div>
                         <!-- Shop Product Option Right Section (Sort By Dropdown) -->

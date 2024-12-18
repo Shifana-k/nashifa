@@ -82,7 +82,7 @@ const renderCart = async (req, res) => {
             "product.productId"
         );
 
-        res.render('cart', { cartItems: cartItems, userData: userData });
+        res.render('cart', { cartItems: cartItems, userData: userData,user:userData });
     } catch (error) {
         console.log(error.message);
     }
@@ -363,6 +363,12 @@ const placeOrder = async(req,res)=>{
                 message: `Product not found with ID: ${productItem.productId}`,
               });
             }
+            if (!product.is_listed) {
+              return res.status(400).json({
+                  success: false,
+                  message: `The product '${product?.name || "unknown"}' is no longer available.`,
+              });
+          }
             if (product.quantity < productItem.quantity) {
               return res.status(400).json({
                 success: false,
