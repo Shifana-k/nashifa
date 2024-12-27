@@ -96,7 +96,14 @@ const unblockUser = async(req,res)=>{
     }
 }
 
-
+const loadLogout =async(req,res)=>{
+    try {
+        req.session.destroy()
+        res.redirect("/admin");
+    } catch (error) {
+        return res.status(500).send({ error: "Internal server error" });
+    }
+}
 
 module.exports = {
     renderLogin,
@@ -105,4 +112,5 @@ module.exports = {
     renderCustomer,
     blockUser,
     unblockUser,
+    loadLogout,
 }

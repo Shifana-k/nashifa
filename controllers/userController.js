@@ -4,7 +4,11 @@ const nodemailer = require('nodemailer');
 const crypto = require('crypto')
 const Category = require('../models/categoryModel');
 const Products = require('../models/productModel');
-
+const Wallet = require('../models/walletModel');
+const WishlistItem = require('../models/wishlistModel');
+const ProductOffer = require('../models/productOffer');
+const CategoryOffer = require('../models/categoryOffer');
+const CartItem = require('../models/cartModel');
 
 
 function generateOtp(){
@@ -62,6 +66,7 @@ const securePassword = async(password)=>{
 
 const renderHome = async (req,res) => {
     try {
+        
         // check user is logged and get user data
         const user = req.session.user_id ? await User.findById(req.session.user_id) : req.user || null;
         res.render('home',{user})
@@ -522,7 +527,14 @@ const verifyOtp = async (req, res) => {
         await newUser.save();
 
         await User.updateOne({ email: tempUserData.email }, { is_verified: true });
-        
+
+        // const userData = tempUserData;
+        // const wallet = new Wallet({
+        //     userId: userData._id,
+        //     balance: 0,
+        //     transactions: [],
+        //   });
+        //   await wallet.save();
         // Clear session and redirect to login
         req.session.tempUser = null;
         // req.session.message = "OTP verified successfully. Please log in to continue.";
@@ -725,17 +737,44 @@ const generateProductFilter = async (search, category, unblockedCategoryIds, fil
   
     const newLabelCountdownDays = 3;
     const today = new Date();
-  
+    const currentOffers = await ProductOffer.find();
+    const currentCategoryOffers = await CategoryOffer.find();
+
     const enhancedProducts = productData.map((product) => {
       const daysSinceCreation = Math.floor(
         (today - new Date(product.createdAt)) / (1000 * 60 * 60 * 24)
       );
       const isNew = daysSinceCreation <= newLabelCountdownDays && product.quantity > 0;
-  
+      let discountedPrice = product.price;
+      let appliedDiscount = 0;
+
+
+      const productOffer = currentOffers.find(
+        (offer) => offer.productId.toString() === product._id.toString()
+      );
+      if (productOffer) {
+        appliedDiscount = Math.max(appliedDiscount, productOffer.discountValue);
+      }
+
+      const categoryOffer = currentCategoryOffers.find(
+        (offer) => offer.categoryId.toString() === product.category.toString()
+      );
+      if (categoryOffer) {
+        appliedDiscount = Math.max(appliedDiscount, categoryOffer.discountValue);
+      }
+
+      if (appliedDiscount > 0) {
+        discountedPrice = Math.ceil(
+          product.price - (product.price * appliedDiscount) / 100
+        );
+      }
+
       return {
         ...product.toObject(),
         outOfStock: product.quantity === 0,
         isNew,
+        discountedPrice,
+        discountPercentage: appliedDiscount,
       };
     });
   
@@ -758,6 +797,10 @@ const renderShop = async (req, res) => {
         category.productCount = productCount; // Attach the product count to the category
     }
       const unblockedCategoryIds = categories.map((cat) => cat._id);
+
+      const currentProductOffers = await ProductOffer.find();
+      const currentCategoryOffers = await CategoryOffer.find();
+
   
       // Parse filters from query parameters
       const filters = {
@@ -780,9 +823,70 @@ const renderShop = async (req, res) => {
       );
   
       const totalPages = Math.ceil(totalProducts / limit);
+
+
+      const calculateDiscountedPrice = (productPrice, discountPercent) => {
+        let discountedPrice =
+          productPrice - (productPrice * discountPercent) / 100;
+        return Math.round(discountedPrice);
+      };
+  
+      const modifiedProductData = await Promise.all(
+        enhancedProducts.map(async (product) => {
+        
+        const originalProduct = await Products.findById(product._id);
+
+        if (!originalProduct) {
+            console.error(`Product with ID ${product._id} not found in the database.`);
+            return null; // Skip if the product isn't found
+        }
+
+          const productOffer = currentProductOffers.find(
+            (offer) => offer.productId.toString() === product._id.toString()
+          );
+  
+          let discountedPrice = originalProduct.price;
+          let discountPercent = 0;
+  
+          if (productOffer) {
+            discountPercent = productOffer.discountValue;
+            discountedPrice = calculateDiscountedPrice(
+              originalProduct.price,
+              discountPercent
+            );
+          }
+
+
+          const categoryOffer = currentCategoryOffers.find(
+            (offer) => offer.categoryId.toString() === originalProduct.category.toString()
+        );
+        
+        if (categoryOffer) {
+            // Take the higher discount between product and category offers
+            discountPercent = Math.max(
+                discountPercent,
+                categoryOffer.discountValue
+            );
+            discountedPrice = calculateDiscountedPrice(
+                originalProduct.price,
+                discountPercent
+            );
+        }
+  
+          originalProduct.discount = discountPercent;
+          await originalProduct.save();
+  
+          return {
+            ...originalProduct.toObject(),
+            discountedPrice,
+            outOfStock: originalProduct.quantity === 0,
+
+          };
+        })
+      );
   
       const renderData = {
-        productData: enhancedProducts,
+        productData: modifiedProductData,
         categories,
         search,
         currentPage: parseInt(page),
@@ -790,6 +894,7 @@ const renderShop = async (req, res) => {
         filters,
         totalProducts,
         limit, 
+        selectedSize: size || 'all',
       };
   
       res.render("shop", { user, renderData, sortBy });
@@ -810,7 +915,28 @@ const renderProductDetails = async (req, res) => {
         if (!product) {
             return res.render("productDetails", { product: null, relatedProducts: [], user: null });
         }
+        const productOffer = await ProductOffer.findOne({ productId: product._id });
 
+        const categoryOffer = await CategoryOffer.findOne({
+          categoryId: product.category,
+        });
+    
+        let discountedPrice = null;
+        if (productOffer) {
+          discountedPrice =
+            product.price - (product.price * productOffer.discountValue) / 100;
+          discountedPrice = Math.round(discountedPrice);
+        }
+    
+        if (categoryOffer) {
+          let categoryDiscountedPrice =
+            product.price - (product.price * categoryOffer.discountValue) / 100;
+          categoryDiscountedPrice = Math.round(categoryDiscountedPrice);
+    
+          if (!discountedPrice || categoryDiscountedPrice < discountedPrice) {
+            discountedPrice = categoryDiscountedPrice;
+          }
+        }
         // Fetch related products (same category, excluding current product)
         const relatedProducts = await Products.find({
             category: product.category._id, 
@@ -822,6 +948,7 @@ const renderProductDetails = async (req, res) => {
         // Prepare data to pass to the view
         const renderData = {
             product,
+            discountedPrice,
             relatedProducts,
             user,
             outOfStock 
@@ -835,6 +962,214 @@ const renderProductDetails = async (req, res) => {
     }
 };
 
+
+const calculateDiscountedPrice = async (product) => {
+    const currentProductOffers = await ProductOffer.find();
+    const currentCategoryOffers = await CategoryOffer.find();
+    const categories = await Category.find({ is_listed: true });
+  
+    let discountedPrice = product.price;
+    let discountPercent = 0;
+  
+    const productOffer = currentProductOffers.find(
+      (offer) => offer.productId.toString() === product._id.toString()
+    );
+  
+    if (productOffer) {
+      discountPercent = productOffer.discountValue;
+      discountedPrice = product.price - (product.price * discountPercent) / 100;
+    }
+  
+    const category = categories.find(
+      (cat) => cat._id.toString() === product.category.toString()
+    );
+    if (category) {
+      const categoryOffer = currentCategoryOffers.find(
+        (offer) => offer.categoryId.toString() === category._id.toString()
+      );
+      if (categoryOffer) {
+        discountPercent = Math.max(discountPercent, categoryOffer.discountValue);
+        discountedPrice = product.price - (product.price * discountPercent) / 100;
+      }
+    }
+  
+    return {
+      discountedPrice: Math.round(discountedPrice),
+      discountPercent
+    };
+  };
+
+const renderWishlist = async(req,res)=>{
+    try {
+        if (!req.session.user_id) {
+            return res.redirect("/sign-in");
+        }
+
+        const userData = await User.findById(req.session.user_id);
+        const wishlistItems = await WishlistItem.find({ userId: req.session.user_id })
+            .populate({
+                path: 'product.productId',
+                model: 'Products',
+                select: 'name price mainImage status category' 
+            });
+
+            if (!wishlistItems || wishlistItems.length === 0) {
+                console.log("No wishlist items found.");
+                return res.render("wishlist", { wishlistItems: [], userData });
+            }
+
+            for (let item of wishlistItems) {
+                const product = item.product[0]?.productId;
+
+                if (!product) {
+                    console.error(`Product not found for wishlist item: ${item._id}`);
+                    continue; // Skip this item
+                }
+                const { discountedPrice, discountPercent } = await calculateDiscountedPrice(item.product[0].productId);
+                item.product[0].discountedPrice = discountedPrice;
+                item.product[0].discountPercent = discountPercent;
+                await item.save();
+      }
+
+        res.render("wishlist", {
+            wishlistItems,
+            userData,
+            user: userData
+        });
+    } catch (error) {
+        console.log(error.message);
+    }
+}
+
+const addToWishlist = async(req,res)=>{
+    try {
+        const userId = req.session.user_id;
+        const { productId } = req.query;
+        
+        const product = await Products.findById(productId);
+    
+        if (!product) {
+            console.log("Product not found");
+            return res.status(404).send("Product not found");
+        }
+
+        const { discountedPrice, discountPercent } = await calculateDiscountedPrice(product);
+
+        let wishlistItem = await WishlistItem.findOne({
+        userId: userId,
+        "product.productId": productId,
+        });
+        
+        if (!wishlistItem) {
+            
+            wishlistItem = new WishlistItem({
+                userId: userId,
+                product: [{
+                productId: productId,
+                discountedPrice: discountedPrice,
+                discountPercent: discountPercent
+                }],
+            });
+            } else {
+                wishlistItem.product[0].discountedPrice = discountedPrice;
+                wishlistItem.product[0].discountPercent = discountPercent;
+              }
+        
+        await wishlistItem.save();
+        
+        res.redirect("/wishlist");
+    } catch (error) {
+        console.log(error.message);
+    }
+}
+
+const RemoveFromWishlist = async(req,res)=>{
+    try {
+        const { productId } = req.query;
+        if (req.session.user_id) {
+        await WishlistItem.findOneAndDelete({
+            userId: req.session.user_id,
+            "product.productId": productId,
+        });
+        res.status(200).json({ message: "Item removed from wishlist" });
+        } else {
+        res.status(401).json({ message: "Unauthorized" });
+        }
+    } catch (error) {
+        console.log(error.message);
+    }
+}
+
+
+const moveToCart = async(req,res)=>{
+    try {      
+        const userId = req.session.user_id;
+        const { productId } = req.query;
+
+
+        const product = await Products.findById(productId);
+        if (!product) {
+        return res.status(404).send("Product not found");
+        }
+
+        
+        const price = product.price;
+
+        
+        let cartItem = await CartItem.findOne({
+        userId: userId,
+        "product.productId": productId,
+        });
+
+        if (!cartItem) {
+        // If the product is not in the cart, create a new cart item
+        cartItem = new CartItem({
+            userId: userId,
+            product: [
+            {
+                productId: productId,
+                quantity: 1,
+                totalPrice: price, 
+                price: price,      // Set price as the regular price
+            },
+            ],
+        });
+        } else {
+        // If the product is already in the cart, check if it exists in the product array
+        const existingProductIndex = cartItem.product.findIndex(
+            (item) => item.productId.toString() === productId
+        );
+
+        if (existingProductIndex !== -1) {
+            // If the product is already in the cart, redirect to the cart page
+            return res.redirect("/cart");
+        } else {
+            // Add the new product to the cart
+            cartItem.product.push({
+            productId: productId,
+            quantity: 1,
+            totalPrice: price, // Use the regular price
+            price: price,      // Set price as the regular price
+            });
+        }
+        }
+
+        // Save the cart item
+        await cartItem.save();
+
+        await WishlistItem.findOneAndDelete({
+            userId: userId,
+            "product.productId": productId,
+        });
+
+        // Redirect to the cart page
+        res.redirect("/wishlist");
+        
+            
+    } catch (error) {
+        console.log(error.message);
+    }
+}
   const logout = async(req,res)=>{
     
         try {
@@ -871,5 +1206,9 @@ module.exports = {
     resendOtp,
     renderShop,
     renderProductDetails,
+    renderWishlist,
+    addToWishlist,
+    RemoveFromWishlist,
+    moveToCart,
     logout,
 }

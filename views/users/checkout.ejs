@@ -37,6 +37,22 @@
     cursor: pointer;
     transition: background-color 0.3s ease; /* Add transition for smooth effect */
   }
+
+  .copy-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 10px;
+  }
+
+  .copy-btn:hover {
+    background-color: #0056b3;
+  }
+
 </style>
 
 <!-- Include SweetAlert CSS and JS -->
@@ -59,17 +75,58 @@
 </div>
 <!-- Breadcrumb End -->
 
+<!-- Modal for displaying coupons -->
+<div class="modal fade" id="couponModal" tabindex="-1" role="dialog" aria-labelledby="couponModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="couponModalLabel">Available Coupons</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+              </button>
+          </div>
+          <div class="modal-body">
+              <% if (couponData && couponData.length > 0) { %>
+                  <ul>
+                      <% couponData.forEach(coupon => { %>
+                        <h4>Coupon Code: <span id="couponCode_<%= coupon._id %>"><%= coupon.code %></span></h4>
+                        <% if (coupon.discountType === 'percentage') { %>
+                          <p>Discount: <%= coupon.discountValue %>%</p>
+                        <% } else if (coupon.discountType === 'fixed') { %>
+                          <p>Discount: ₹<%= coupon.discountValue %></p>
+                        <% } %>
+                        <p>Validity: <%= new Date(coupon.validity).toLocaleDateString() %></p>
+                        <button class="copy-btn" onclick="copyCouponCode('<%= coupon._id %>')">Copy Code</button>
+                      <% }) %>
+                  </ul>
+              <% } else { %>
+                  <p>No available coupons.</p>
+              <% } %>
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+      </div>
+  </div>
+</div>
+
 <!-- Checkout Section Begin -->
 <section class="checkout spad">
   <div class="container">
     <div class="row">
       <div class="col-lg-12">
-        
-          <div >
-            
+        <form id="couponForm">
+          <div class="checkout__coupon">
+            <h5 style="font-weight: 600;">COUPON CODE</h5>
             <br>
-            
+            <input type="text" id="couponCode" name="couponCode" placeholder="Enter your coupon code" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            <button type="button" class="btn btn-info" data-toggle="modal" data-target="#couponModal">
+              View Available Coupons
+          </button>
+            <button type="button" class="site-btn1" onclick="applyCoupon()">Apply</button>
+            <button type="button" class="site-btn1" style="background-color: rgb(100, 100, 100);" onclick="removeCoupon()">Remove</button>
           </div>
+        </form>
        
 
         <br><br>
@@ -152,13 +209,18 @@
                   </label>
                   <br>
                   <br>
-                  
+                  <!-- Razorpay -->
+                  <input type="radio" id="razorpay" name="paymentMethod" value="razorpay">
+                  <label for="razorpay">
+                    <a href="https://razorpay.com/" target="_blank"> <img referrerpolicy="origin" src = "https://badges.razorpay.com/badge-dark.png " style = "height: 34px; width: 40px;" alt = "Razorpay | Payment Gateway | Neobank"></a>                Razorpay
+                  </label>
                 </div>
 
                 
                 
                 <!-- End Payment Method -->
                 <button type="submit" class="site-btn">Place Order</button>
+                
               </div>
             </div>
           </div>
@@ -171,7 +233,7 @@
 <!-- Checkout Section End -->
 
 <%- include('../layouts/userFooter') %>
-<!-- <script src="https://checkout.razorpay.com/v1/checkout.js"></script> -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const addressDetails = document.querySelectorAll('.checkout__address__details');
@@ -246,6 +308,78 @@ function checkTotalAmount() {
 }
 
 
+function copyCouponCode(couponId) {
+    const couponCode = document.getElementById(`couponCode_${couponId}`).innerText;
+    navigator.clipboard.writeText(couponCode).then(() => {
+      Swal.fire('Copied!', 'Coupon code has been copied to clipboard.', 'success');
+    }).catch(err => {
+      console.error('Failed to copy coupon code: ', err);
+      Swal.fire('Error', 'Failed to copy coupon code.', 'error');
+    });
+  }
+
+function applyCoupon() {
+    const couponCode = document.getElementById('couponCode').value;
+
+    fetch('/applyCoupon', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ couponCode: couponCode })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const currentTotal = parseFloat(document.getElementById('totalAmount').innerText.replace('₹ ', ''));
+            const newTotal = currentTotal - data.discount;
+            
+            document.getElementById('totalAmount').innerText = `₹ ${newTotal.toFixed(2)}`;
+            document.getElementById('discount').innerText = `₹ ${data.discount.toFixed(2)}`;
+            
+            Swal.fire('Success', 'Coupon applied successfully', 'success');
+            checkTotalAmount();
+        } else {
+            Swal.fire('Error', data.message || 'Error applying coupon', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire('Error', 'An error occurred. Please try again.', 'error');
+    });
+}
+
+function removeCoupon() {
+    const couponCode = document.getElementById('couponCode').value;
+
+    fetch('/removeCoupon', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ couponCode: couponCode })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const originalTotal = parseFloat('<%= subtotal %>') ; 
+            const originalDiscount = 0; //  no discount initially
+            
+            document.getElementById('totalAmount').innerText = `₹ ${originalTotal.toFixed(2)}`;
+            document.getElementById('discount').innerText = `₹ ${originalDiscount.toFixed(2)}`;
+            document.getElementById('couponCode').value = '';
+            
+            Swal.fire('Success', 'Coupon removed successfully', 'success');
+        } else {
+            Swal.fire('Error', data.message || 'Error removing coupon', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire('Error', 'An error occurred. Please try again.', 'error');
+    });
+}
+
 function handlePlaceOrder(e) {
     e.preventDefault();
     const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
@@ -257,7 +391,9 @@ function handlePlaceOrder(e) {
     if (!paymentMethod) {
         return Swal.fire('Error', 'Please select a payment method.', 'error');
     }
-
+    if (paymentMethod === 'razorpay') {
+        handleRazorpayPayment(selectedAddress);
+    } else {
     fetch('/placeOrder', {
         method: 'POST',
         headers: {
@@ -282,10 +418,64 @@ function handlePlaceOrder(e) {
         console.error('Error:', error);
         Swal.fire('Error', 'An error occurred. Please try again.', 'error');
     });
+  }
 }
 
 
- 
+async function handleRazorpayPayment(selectedAddress) {
+    try {
+        const response = await fetch('/placeOrder', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                selectedAddress: selectedAddress,
+                paymentMethod: 'razorpay',
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            const options = {
+                key: "<%= razorpay_id %>",
+                amount: data.amount,
+                currency: data.currency,
+                name: "Nashifa",
+                description: "Test Transaction",
+                order_id: data.razorpayOrderId,
+                handler: function (response) {
+                    verifyPayment(response, data.orderId);
+                },
+                prefill: {
+                    name: "<%= userData.name %>",
+                    email: "<%= userData.email %>",
+                    contact: "<%= userData.mobile %>"
+                },
+                theme: {
+                    color: "#3399cc"
+                },
+                modal: {
+                    ondismiss: function() {
+                        setTimeout(() => {
+                            showPaymentFailedAlert();
+                        }, 300);
+                    }
+                }
+            };
+            const rzp1 = new Razorpay(options);
+            rzp1.open();
+        } 
+        // else {
+        //     showPaymentFailedAlert();
+        // }
+    } catch (error) {
+        console.error('Error:', error);
+        showPaymentFailedAlert();
+    }
+}
+
 
 function showPaymentFailedAlert() {
     Swal.fire({
@@ -300,6 +490,33 @@ function showPaymentFailedAlert() {
             toast.addEventListener('mouseleave', Swal.resumeTimer)
         }
     });
+}
+
+async function verifyPayment(response, orderId) {
+    try {
+        const verifyResponse = await fetch('/verifyRazorpayPayment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                orderId: orderId
+            })
+        });
+
+        const verifyData = await verifyResponse.json();
+        if (verifyData.success) {
+            window.location.replace('/orderplaced');
+        } else {
+            showPaymentFailedAlert();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showPaymentFailedAlert();
+    }
 }
 
 

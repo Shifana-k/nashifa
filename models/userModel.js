@@ -75,6 +75,16 @@ const userSchema = new mongoose.Schema({
     }],
     resetToken: String,
     resetTokenExpiry: Date,
+    usedCoupons: {
+        type: [String],
+        default: []
+    },
+    availableCoupons: [
+        {
+            couponId: { type: mongoose.Schema.Types.ObjectId, ref: 'Coupon' },
+            couponCode: { type: String }
+        }
+    ]
 
 },
 { timestamps: true }

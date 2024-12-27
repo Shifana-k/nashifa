@@ -51,6 +51,16 @@
         </div>
 
         <div class="mb-3">
+          <label for="productSize" class="form-label">Size</label>
+          <select class="form-control" id="productSize" name="size" required>
+            <option value="">Select a size</option>
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+          </select>
+        </div>
+        
+        <div class="mb-3">
           <label for="mainImage" class="form-label">Main Image</label>
           <input type="file" class="form-control" id="mainImage" name="mainImage" accept="image/*" onchange="handleCrop(event, 'mainImagePreview', 'mainImageCropped', 'mainImageCropModal')" >
           <img id="mainImagePreview" src="" alt="Main Image Preview" style="display: none; max-width: 200px; max-height: 150px; object-fit: cover;" />

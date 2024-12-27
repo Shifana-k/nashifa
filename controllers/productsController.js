@@ -24,7 +24,7 @@ const renderAddProducts = async (req, res) => {
 
 const insertProducts = async (req, res) => {
     try {
-      let { name, description, price, quantity, category } = req.body;
+      let { name, description, price, quantity,size, category } = req.body;
   
       name = name.trim();
       description = description.trim();
@@ -72,6 +72,7 @@ const insertProducts = async (req, res) => {
         mainImage: uploadedImageName,
         screenshots: uploadedScreenshots,
         quantity,
+        size,
         category
       });
   
@@ -146,7 +147,7 @@ const renderEditProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, category, description, quantity, price } = req.body;
+        const { name, category, description, quantity, price, size } = req.body;
         
        
         if (quantity < 0 || price <0) {
@@ -164,6 +165,7 @@ const updateProduct = async (req, res) => {
         existingProduct.description = description;
         existingProduct.quantity = quantity;
         existingProduct.price = price;
+        existingProduct.size = size;
 
      
         if (req.files && req.files['mainImage']) {

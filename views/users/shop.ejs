@@ -253,7 +253,7 @@
                                 <div class="label new" style="background-color: #36a300;width: 50px; height: 20px;">New</div>
                             <% } %>
                               <ul class="product__hover">
-                                <li><a href="#"><img src="/userAssets/img/icon/heart.png" alt=""></a></li>
+                                <li><a href="/addToWishlist?productId=<%=product._id%>"><img src="/userAssets/img/icon/heart.png" alt=""></a></li>
                                 <% if (!product.outOfStock) { %>
                                     <li><a href="/addToCart?productId=<%= product._id %>"><span class="icon_bag_alt"></span></a></li>
                                 <% } else { %>
@@ -281,7 +281,14 @@
                                 <i class="fa fa-star-o"></i>
                               </div>
                               <!-- Dynamic Price -->
-                              <h5>$<%= product.price.toFixed(2) %></h5>
+                              <% if (product.discountedPrice < product.price) { %>
+                                <div class="product__price">
+                                    <span style="text-decoration: line-through;">₹ <%= product.price %></span> ₹ <%= product.discountedPrice %>
+                                </div>
+                            <% } else { %>
+                                <div class="product__price">₹ <%= product.price %></div>
+                            <% } %>
+                              
                               <div class="product__color__select">
                                 <label for="pc-<%= product._id %>">
                                   <input type="radio" id="pc-<%= product._id %>">
@@ -315,8 +322,7 @@
                             <a class="active" href="#">1</a>
                             <a href="#">2</a>
                             <a href="#">3</a>
-                            <span>...</span>
-                            <a href="#">21</a>
+                            <a href="#"><i class="fa fa-angle-right"></i></a>
                         </div>
                     </div>
                 </div>
@@ -327,3 +333,5 @@
 <!-- Shop Section End -->
 
 <%- include('../layouts/userFooter.ejs') %>
+
+

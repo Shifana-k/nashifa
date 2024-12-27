@@ -60,6 +60,17 @@
           <input type="number" class="form-control" id="productQuantity" name="quantity" required value="<%= productData.quantity %>">
         </div>
 
+        <!-- Product size -->
+        <div class="mb-3">
+          <label for="productSize" class="form-label">Size</label>
+          <select class="form-control" id="productSize" name="size" required>
+            <option value="">Select a size</option>
+            <option value="small" <% if (productData.size === 'small') { %> selected <% } %>>Small</option>
+            <option value="medium" <% if (productData.size === 'medium') { %> selected <% } %>>Medium</option>
+            <option value="large" <% if (productData.size === 'large') { %> selected <% } %>>Large</option>
+          </select>
+        </div>
+
         <!-- Main image -->
         <div class="mb-3">
           <label for="mainImage" class="form-label">Main Image</label>
