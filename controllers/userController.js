@@ -1015,7 +1015,7 @@ const renderWishlist = async(req,res)=>{
 
             if (!wishlistItems || wishlistItems.length === 0) {
                 console.log("No wishlist items found.");
-                return res.render("wishlist", { wishlistItems: [], userData });
+                return res.render("wishlist", { wishlistItems: [], userData , user:userData });
             }
 
             for (let item of wishlistItems) {
@@ -1112,7 +1112,18 @@ const moveToCart = async(req,res)=>{
         return res.status(404).send("Product not found");
         }
 
-        
+        if (!product.is_listed) {
+            return res.status(400).json({
+                success: false,
+                message: `The product '${product?.name || "unknown"}' is no longer available.`,
+            });
+        }
+        if (product.quantity==0) {
+            return res.status(404).json({
+                success: false,
+                message:"Insuufficient Stock for product"
+            });
+        }
         const price = product.price;
 
         

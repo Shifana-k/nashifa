@@ -4,6 +4,8 @@ const Address = require('../models/userAddress');
 const Products = require('../models/productModel');
 const Order = require('../models/orderModel');
 const Wallet = require('../models/walletModel');
+const ProductOffer = require('../models/productOffer');
+const CategoryOffer = require('../models/categoryOffer');
 const crypto = require('crypto');
 const Coupon = require('../models/couponModel');
 const Wishlist = require('../models/wishlistModel')
@@ -486,7 +488,7 @@ const placeOrder = async(req,res)=>{
           });
         }
     
-        const { selectedAddress, paymentMethod, subtotal } = req.body;
+        const { selectedAddress, paymentMethod, subtotal , couponCode , discount } = req.body;
     
         if (!selectedAddress) {
           return res.status(400).json({
@@ -511,6 +513,8 @@ const placeOrder = async(req,res)=>{
         }
     
         const orderedItems = [];
+        // const currentOffers = await ProductOffer.find();
+        // const currentCategoryOffers = await CategoryOffer.find();
         let orderSubtotal = 0;
     
         for (const cartItem of cartItems) {
@@ -527,7 +531,7 @@ const placeOrder = async(req,res)=>{
                   success: false,
                   message: `The product '${product?.name || "unknown"}' is no longer available.`,
               });
-          }
+            }
             if (product.quantity < productItem.quantity) {
               return res.status(400).json({
                 success: false,
@@ -587,6 +591,7 @@ const placeOrder = async(req,res)=>{
           orderDate: new Date(),
           deliveryAddress: selectedAddress,
           paymentMethod,
+          coupon: couponCode,
           paymentStatus: paymentMethod !== "razorpay",
         });
     

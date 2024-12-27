@@ -60,7 +60,7 @@
                                             </td>
                                             <td>₹<%= item.product[0].productId.price %></td>
                                             <td class="wishlist__cart">
-                                                <button class="btn btn-primary aadd-to-cart-btn" onclick="location.href='/moveToCart?productId=<%=item.product[0].productId._id %>'">Move to Cart</button>
+                                                <button class="btn btn-primary aadd-to-cart-btn" data-productId="<%=item.product[0].productId._id %>">Move to Cart</button>
                                                 <button class="btn btn-danger remove-from-wishlist-btn" data-productId="<%= item.product[0].productId._id %>">Remove</button>
                                             </td>
                                         </tr>
@@ -120,6 +120,44 @@
                                 Swal.fire(
                                     'Error!',
                                     'There was an error removing the item from the wishlist.',
+                                    'error'
+                                );
+                            }
+                        });
+                    }
+                });
+            });
+        });
+        document.querySelectorAll('.aadd-to-cart-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const productId = this.getAttribute('data-productId');
+
+                Swal.fire({
+                    title: 'Are you sure?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, Move it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: `/moveToCart?productId=${productId}`,
+                            type: 'GET',
+                            success: function (response) {
+                                Swal.fire(
+                                    'Moved!',
+                                    'Your item has been moved to cart and removed from the wishlist.',
+                                    'success'
+                                ).then(() => {
+                                    location.reload();
+                                });
+                            },
+                            error: function (xhr) {
+                                const errorMessage = xhr.responseJSON?.message || 'An error occurred. Please try again.';
+                                Swal.fire(
+                                    'Error!',
+                                    errorMessage,
                                     'error'
                                 );
                             }
