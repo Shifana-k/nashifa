@@ -76,6 +76,7 @@ admin_route.delete('/removeCategoryOffer/:offerId',offerController.removeCategor
 admin_route.get('/sales-report',salesReportController.renderSalesReport);
 admin_route.post('/sortReport',salesReportController.sortReport);
 admin_route.get('/downloadsalesreport',salesReportController.downloadSalesReport);
+admin_route.get('/downloadsalesexcel',salesReportController.downloadSalesExcel);
 
 
 

@@ -4,6 +4,7 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const fsPromises = require('fs').promises;
 const path = require('path');
+const XLSX = require('xlsx');
 
 const renderSalesReport = async(req,res)=>{
     try {
@@ -59,6 +60,8 @@ const getQueryByDateRange = (dateRange, startDate, endDate) => {
         productImage: item.productId?.mainImage || "",
         quantity: item.quantity,
         totalPrice: item.totalProductAmount,
+        discount: order.discount || 0, // Add discount
+        finalPrice: item.totalProductAmount - (order.discount || 0), // Add final price after discount
         saleDate: order.createdAt,
         itemStatus: item.status || "Pending",
         deliveryAddress: order.deliveryAddress?.address || "Unknown",
@@ -122,6 +125,8 @@ const downloadSalesReport = async(req,res)=>{
           quantity: item.quantity,
           price: item.productId?.price || 0,
           totalAmount: (item.quantity * (item.productId?.price || 0)),
+          discount: order.discount || 0,
+          finalAmount: (item.quantity * (item.productId?.price || 0)) - (order.discount || 0),
           saleDate: order.createdAt
         }))
       );
@@ -192,25 +197,29 @@ const downloadSalesReport = async(req,res)=>{
       const tableTop = 240;
       let y = tableTop;
   
-      const generateTableRow = (y, saleId, customer, product, qty, price, total, date) => {
+      const generateTableRow = (y, saleId, customer, product, qty, price, total, discount, final, date) => {
         doc.fontSize(9)
            .text(saleId, 50, y, { width: 70 })
            .text(customer, 120, y, { width: 100 })
-           .text(product, 220, y, { width: 100 })
-           .text(qty.toString(), 320, y, { width: 50, align: 'right' })
-           .text(price, 370, y, { width: 60, align: 'right' })
-           .text(total, 430, y, { width: 60, align: 'right' })
-           .text(date, 510, y, { width: 60 });
+           .text(product, 200, y, { width: 100 })
+           .text(qty.toString(), 240, y, { width: 50, align: 'right' })
+           .text(price, 290, y, { width: 60, align: 'right' })
+           .text(total, 350, y, { width: 60, align: 'right' })
+           .text(discount, 400, y, { width: 60, align: 'right' })
+           .text(final, 450, y, { width: 60, align: 'right' })
+           .text(date, 520, y, { width: 60 });
       };
   
       
       doc.font('Helvetica-Bold');
-      generateTableRow(y, 'Sale ID', 'Customer', 'Product', 'Qty', 'Price', 'Total', 'Date');
+      generateTableRow(y, 'Sale ID', 'Customer', 'Product', 'Qty', 'Price', 'Total', 'Discount',
+      'Final', 'Date');
       generateHr(y + 20);
       y += 30;
   
       doc.font('Helvetica');
       let totalSales = 0;
+      let totalDiscounts = 0;
       salesData.forEach((sale) => {
         generateTableRow(
           y,
@@ -218,11 +227,14 @@ const downloadSalesReport = async(req,res)=>{
           sale.customerName.slice(0, 15),
           sale.productName.slice(0, 15),
           sale.quantity,
-          sale.price,
-          sale.totalAmount,
+          formatCurrency(sale.price),
+          formatCurrency(sale.totalAmount),
+          formatCurrency(sale.discount),
+          formatCurrency(sale.finalAmount),
           formatDate(sale.saleDate)
         );
         totalSales += sale.totalAmount;
+        totalDiscounts += sale.discount;
         y += 20;
         generateHr(y);
         y += 10;
@@ -237,7 +249,9 @@ const downloadSalesReport = async(req,res)=>{
   
       y += 10;
       doc.font('Helvetica-Bold');
-      generateTableRow(y, '', '', '', '', 'Total Sales:', totalSales, '');
+      doc.text(`Total Sales: ${formatCurrency(totalSales)}`, 390, y);
+      doc.text(`Total Discounts: ${formatCurrency(totalDiscounts)}`, 390, y + 20);
+      
   
       doc.fontSize(10)
          .text(
@@ -272,8 +286,69 @@ const downloadSalesReport = async(req,res)=>{
       res.status(500).send("Internal Server Error");
     }
 }
+
+
+const downloadSalesExcel = async(req,res)=>{
+  try {
+    const orders = await Order.find()
+            .populate('orderedItem.productId')
+            .populate('userId');
+
+        const salesData = orders.flatMap(order =>
+            order.orderedItem.map(item => ({
+                'Sale ID': order._id.toString(),
+                'Customer Name': order.userId?.name || 'Unknown',
+                'Product Name': item.productId?.name || 'No Product Name',
+                'Quantity': item.quantity,
+                'Unit Price': item.productId?.price || 0,
+                'Total Amount': (item.quantity * (item.productId?.price || 0)),
+                'Discount': order.discount || 0,
+                'Final Amount': (item.quantity * (item.productId?.price || 0)) - (order.discount || 0),
+                'Sale Date': moment(order.createdAt).format('DD/MM/YYYY')
+            }))
+        );
+
+        // Create a new workbook and worksheet
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.json_to_sheet(salesData);
+
+        // Add column widths
+        const colWidths = [
+            { wch: 24 }, // Sale ID
+            { wch: 20 }, // Customer Name
+            { wch: 30 }, // Product Name
+            { wch: 10 }, // Quantity
+            { wch: 12 }, // Unit Price
+            { wch: 12 }, // Total Amount
+            { wch: 12 }, // Discount
+            { wch: 12 }, // Final Amount
+            { wch: 12 }  // Sale Date
+        ];
+        worksheet['!cols'] = colWidths;
+
+        // Add the worksheet to the workbook
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Sales Report');
+
+        // Generate Excel file
+        const excelFileName = `salesReport_${moment().format('YYYYMMDD_HHmmss')}.xlsx`;
+        const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+        // Set response headers
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=${excelFileName}`);
+        
+        // Send the file
+        res.send(excelBuffer);
+
+  } catch (error) {
+    console.log("Error in downloadSalesExcel");
+    
+    console.log(error.message);
+  }
+}
 module.exports={
     renderSalesReport,
     sortReport,
     downloadSalesReport,
+    downloadSalesExcel,
 }

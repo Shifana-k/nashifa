@@ -335,6 +335,7 @@
         <th>Price</th>
         <th>Total</th>
         <th>Delivery Charge</th>
+        <th>Discount</th>
       </tr>
   </thead>
   <tbody>
@@ -347,10 +348,13 @@
           <td>₹<%= specificProduct.priceAtPurchase.toFixed(2) %></td>
           <td><% if (orderData.deliveryCharge) { %>
             <%= orderData.orderAmount %>
-          <% } else { %>
-            <%= specificProduct.totalProductAmount %>
+          <% } else if (specificProduct.discountedPrice) { %>
+            <%= specificProduct.totalProductAmount + (specificProduct.priceAtPurchase - specificProduct.discountedPrice).toFixed(2)*  specificProduct.quantity %>
+            <% } else { %>
+              <%= specificProduct.discountedPrice %>
           <% } %></td>
           <td>₹<%= orderData.deliveryCharge %></td>
+          <td>₹<%= (specificProduct.priceAtPurchase - specificProduct.discountedPrice).toFixed(2)*  specificProduct.quantity%></td>
       </tr>
   </tbody>
 
@@ -359,8 +363,10 @@
           <td colspan="3" style="text-align: right; font-weight: bold;">Total Order Amount:</td>
           <td colspan="2" style="font-weight: bold;">₹<% if (orderData.deliveryCharge) { %>
             <%= orderData.orderAmount %>
-          <% } else { %>
+          <% } else if (specificProduct.discountedPrice) { %>
             <%= specificProduct.totalProductAmount %>
+            <% } else { %>
+              <%= specificProduct.discountedPrice %>
           <% } %></td>
       </tr>
   </tfoot>

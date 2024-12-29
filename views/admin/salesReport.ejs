@@ -29,7 +29,11 @@
               <!-- Pagination will be dynamically inserted here -->
             </ul>
           </nav>
-          <button class="btn btn-primary mt-3" id="downloadPdfBtn">Download PDF</button>
+          <!-- <button class="btn btn-primary mt-3" id="downloadPdfBtn">Download PDF</button> -->
+          <div class="d-flex justify-content-center gap-2 mt-3">
+            <button class="btn btn-primary" id="downloadPdfBtn">Download PDF</button>
+            <button class="btn btn-success" id="downloadExcelBtn">Download Excel</button>
+          </div>
         </div>
       </div>
     </div>
@@ -118,6 +122,33 @@ $(document).ready(function() {
       });
   });
 
+  const downloadExcelBtn = $('#downloadExcelBtn');
+
+    downloadExcelBtn.click(function() {
+        $(this).text('Generating Excel...').prop('disabled', true);
+        fetch('/admin/downloadsalesexcel')
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'salesReport.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to download Excel. Please try again.');
+            })
+            .finally(() => {
+                $(this).text('Download Excel').prop('disabled', false);
+            });
+    });
+
   function fetchAndDisplaySalesReport(dateRange, startDate, endDate, page = 1) {
     $.ajax({
       url: '/admin/sortReport',
@@ -134,7 +165,7 @@ $(document).ready(function() {
           salesReportTable.html('<p class="text-muted">No sales data available for the selected date range.</p>');
         } else {
           const table = $('<table class="table table-hover"></table>');
-          const tableHead = $('<thead><tr><th>Sale ID</th><th>Customer Name</th><th>Product Image</th><th>Product Name</th><th>Quantity</th><th>Total Price</th><th>Date</th></tr></thead>');
+          const tableHead = $('<thead><tr><th>Sale ID</th><th>Customer Name</th><th>Product Image</th><th>Product Name</th><th>Quantity</th><th>Total Price</th><th>Discount</th><th>Final Price</th><th>Date</th></tr></thead>');
           const tableBody = $('<tbody></tbody>');
           
           salesData.forEach(sale => {
@@ -150,6 +181,8 @@ $(document).ready(function() {
                 <td>${sale.productName}</td>
                 <td>${sale.quantity}</td>
                 <td>Rs.${sale.totalPrice.toFixed(2)}</td>
+                <td>Rs.${sale.discount.toFixed(2)}</td>
+                <td>Rs.${sale.finalPrice.toFixed(2)}</td>
                 <td>${moment(sale.saleDate).format('DD/MM/YYYY')}</td>
               </tr>
             `;
