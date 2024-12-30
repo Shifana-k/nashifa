@@ -120,5 +120,9 @@ user_route.post('/returnOrder',profileController.returnOrderRequest);
 user_route.get('/Wallet',walletController.renderWallet)
 user_route.post('/add-money',walletController.addMoneyToWallet)
 
+user_route.post('/initiatePayment',profileController.initiatePayment);
+user_route.post('/verifyPayment',profileController.verifyPayment);
+
+user_route.get('/invoice/:orderId/:productId',profileController.generateInvoice)
 
 module.exports = user_route

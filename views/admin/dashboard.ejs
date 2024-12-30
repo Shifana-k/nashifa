@@ -1,187 +1,233 @@
-<%- include('../layouts/adminHeader.ejs') %>
+<%- include('../layouts/adminheader') %>
 
 <main class="main-wrap">
-    <header class="main-header navbar">
-      <!-- Header content -->
-    </header>
-  
-    <section class="content-main" style="margin-left: 25rem;">
-      <div class="content-header">
-        <div>
-          <h2 class="content-title card-title">Dashboard</h2>
-          <p>Overview of dummy business data</p>
-        </div>
-        <div>
-          <select id="reportType" class="form-select">
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
-            <option value="yearly">Yearly</option>
-          </select>
+  <header class="main-header navbar">
+    <!-- Header content -->
+  </header>
+
+  <section class="content-main" style="margin-left: 25rem;">
+    <div class="content-header">
+      <div>
+        <h2 class="content-title card-title">Dashboard</h2>
+        <p>Whole data about your business here</p>
+      </div>
+      <div>
+        <select id="reportType" class="form-select">
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="yearly">Yearly</option>
+        </select>
+      </div>
+    </div>
+    <br>
+    <div class="row">
+      <!-- Total Revenue -->
+      <div class="col-lg-3">
+        <div class="card card-body mb-4">
+          <article class="icontext">
+            <span class="icon icon-sm rounded-circle bg-primary-light">
+              <i class="text-primary material-icons md-monetization_on"></i>
+            </span>
+            <div class="text">
+              <h6 class="mb-1">Total Revenue</h6>
+              <span>₹<%= totalRevenue.toFixed(2) %></span>
+            </div>
+          </article>
         </div>
       </div>
-      <br>
-      <div class="row">
-        <!-- Total Revenue -->
-        <div class="col-lg-3">
-          <div class="card card-body mb-4">
-            <article class="icontext">
-              <span class="icon icon-sm rounded-circle bg-primary-light">
-                <i class="text-primary material-icons md-monetization_on"></i>
-              </span>
-              <div class="text">
-                <h6 class="mb-1">Total Revenue</h6>
-                <span>₹<%= (123456.78).toFixed(2) %></span>
-              </div>
-            </article>
-          </div>
-        </div>
-        <!-- Total Orders -->
-        <div class="col-lg-3">
-          <div class="card card-body mb-4">
-            <article class="icontext">
-              <span class="icon icon-sm rounded-circle bg-success-light">
-                <i class="text-success material-icons md-local_shipping"></i>
-              </span>
-              <div class="text">
-                <h6 class="mb-1">Total Orders</h6>
-                <span class="total-orders"><%= 789 %></span>
-              </div>
-            </article>
-          </div>
-        </div>
-        <!-- Monthly Earnings -->
-        <div class="col-lg-3">
-          <div class="card card-body mb-4">
-            <article class="icontext">
-              <span class="icon icon-sm rounded-circle bg-info-light">
-                <i class="text-info material-icons md-shopping_cart"></i>
-              </span>
-              <div class="text">
-                <h6 class="mb-1">Monthly Earnings</h6>
-                <span>₹<%= (56789.12).toFixed(2) %></span>
-              </div>
-            </article>
-          </div>
-        </div>
-        <!-- Returns -->
-        <div class="col-lg-3">
-          <div class="card card-body mb-4">
-            <article class="icontext">
-              <span class="icon icon-sm rounded-circle bg-danger-light">
-                <i class="text-danger material-icons md-receipt"></i>
-              </span>
-              <div class="text">
-                <h6 class="mb-1">Returns</h6>
-                <span class="total-returns"><%= 34 %></span>
-              </div>
-            </article>
-          </div>
+      <!-- Total Orders -->
+      <div class="col-lg-3">
+        <div class="card card-body mb-4">
+          <article class="icontext">
+            <span class="icon icon-sm rounded-circle bg-success-light">
+              <i class="text-success material-icons md-local_shipping"></i>
+            </span>
+            <div class="text">
+              <h6 class="mb-1">Total Orders</h6>
+              <span class="total-orders"><%= totalOrders %></span>
+            </div>
+          </article>
         </div>
       </div>
-      <div class="row">
-        <!-- Cancellations -->
-        <div class="col-lg-3">
-          <div class="card card-body mb-4">
-            <article class="icontext">
-              <span class="icon icon-sm rounded-circle bg-secondary-light">
-                <i class="text-secondary material-icons md-highlight_off"></i>
-              </span>
-              <div class="text">
-                <h6 class="mb-1">Cancellations</h6>
-                <span class="total-cancellations"><%= 12 %></span>
-              </div>
-            </article>
-          </div>
+      <!-- Monthly Earnings -->
+      <div class="col-lg-3">
+        <div class="card card-body mb-4">
+          <article class="icontext">
+            <span class="icon icon-sm rounded-circle bg-info-light">
+              <i class="text-info material-icons md-shopping_cart"></i>
+            </span>
+            <div class="text">
+              <h6 class="mb-1">Monthly Earnings</h6>
+              <span>₹<%= monthlyEarning.toFixed(2) %></span>
+            </div>
+          </article>
         </div>
       </div>
-      <div class="row">
-        <!-- Sales Chart -->
-        <div class="col-xl-8 col-lg-12">
-          <div class="card mb-4">
-            <article class="card-body">
-              <h5 class="card-title">Sale Statistics</h5>
-              <canvas id="salesChart" height="200"></canvas>
-            </article>
-          </div>
-        </div>
-        <!-- Order Chart -->
-        <div class="col-xl-4 col-lg-12">
-          <div class="card mb-body">
-            <article class="card-body">
-              <h5 class="card-title">Order Statistics</h5>
-              <canvas id="orderChart" height="200"></canvas>
-            </article>
-          </div>
+      <!-- Returns -->
+      <div class="col-lg-3">
+        <div class="card card-body mb-4">
+          <article class="icontext">
+            <span class="icon icon-sm rounded-circle bg-danger-light">
+              <i class="text-danger material-icons md-receipt"></i>
+            </span>
+            <div class="text">
+              <h6 class="mb-1">Returns</h6>
+              <span class="total-returns"><%= totalReturns %></span>
+            </div>
+          </article>
         </div>
       </div>
-      <div class="row">
-        <!-- Top Products -->
-        <div class="col-lg-6">
-          <div class="card card-body mb-4">
-            <h5 class="card-title">Top 10 Products</h5>
-            <ul class="list-group">
-              <% [
-                { name: "Dummy Product 1", count: 15 },
-                { name: "Dummy Product 2", count: 12 },
-                { name: "Dummy Product 3", count: 10 }
-              ].forEach(product => { %>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <%= product.name %>
-                  <span class="badge bg-primary rounded-pill"><%= product.count %></span>
-                </li>
-              <% }) %>
-            </ul>
-          </div>
-        </div>
-        <!-- Top Categories -->
-        <div class="col-lg-6">
-          <div class="card card-body mb-4">
-            <h5 class="card-title">Top 10 Categories</h5>
-            <ul class="list-group">
-              <% [
-                { name: "Dummy Category 1", count: 25 },
-                { name: "Dummy Category 2", count: 20 },
-                { name: "Dummy Category 3", count: 18 }
-              ].forEach(category => { %>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <%= category.name %>
-                  <span class="badge bg-secondary rounded-pill"><%= category.count %></span>
-                </li>
-              <% }) %>
-            </ul>
-          </div>
+    </div>
+    <div class="row">
+      <!-- Cancellations -->
+      <div class="col-lg-3">
+        <div class="card card-body mb-4">
+          <article class="icontext">
+            <span class="icon icon-sm rounded-circle bg-secondary-light">
+              <i class="text-secondary material-icons md-highlight_off"></i>
+            </span>
+            <div class="text">
+              <h6 class="mb-1">Cancellations</h6>
+              <span class="total-cancellations"><%= totalCancellations %></span>
+            </div>
+          </article>
         </div>
       </div>
-    </section>
+    </div>
+    <div class="row">
+      <!-- Sales Chart -->
+      <div class="col-xl-8 col-lg-12">
+        <div class="card mb-4">
+          <article class="card-body">
+            <h5 class="card-title">Sale Statistics</h5>
+            <canvas id="salesChart" height="200"></canvas>
+          </article>
+        </div>
+      </div>
+      <!-- Order Chart -->
+      <div class="col-xl-4 col-lg-12">
+        <div class="card mb-body">
+          <article class="card-body">
+            <h5 class="card-title">Order Statistics</h5>
+            <canvas id="orderChart" height="200"></canvas>
+          </article>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <!-- Top Products -->
+      <div class="col-lg-6">
+        <div class="card card-body mb-4">
+          <h5 class="card-title">Top 10 Products</h5>
+          <ul class="list-group">
+            <% topProducts.forEach(product => { %>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <%= product.name %>
+                <span class="badge bg-primary rounded-pill"><%= product.count %></span>
+              </li>
+            <% }) %>
+          </ul>
+        </div>
+      </div>
+      <!-- Top Categories -->
+      <div class="col-lg-6">
+        <div class="card card-body mb-4">
+          <h5 class="card-title">Top 10 Categories</h5>
+          <ul class="list-group">
+            <% topCategories.forEach(category => { %>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <%= category.name %>
+                <span class="badge bg-secondary rounded-pill"><%= category.count %></span>
+              </li>
+            <% }) %>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <%- include('../layouts/adminfooter') %>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const initialChartData = JSON.parse('<%- chartData %>');
   
-    <%- include('../layouts/adminFooter.ejs') %>
+    document.addEventListener('DOMContentLoaded', function () {
+      const salesCtx = document.getElementById('salesChart').getContext('2d');
+      const orderCtx = document.getElementById('orderChart').getContext('2d');
+      const reportTypeSelect = document.getElementById('reportType');
   
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-      const initialChartData = JSON.parse('<%- JSON.stringify({
-        sales: { labels: ["Jan", "Feb", "Mar"], data: [10, 20, 30] },
-        orders: { labels: ["Jan", "Feb", "Mar"], data: [5, 15, 25] }
-      }) %>');
+      let salesChart;
+      let orderChart;
   
-      document.addEventListener('DOMContentLoaded', function () {
-        const salesCtx = document.getElementById('salesChart').getContext('2d');
-        const orderCtx = document.getElementById('orderChart').getContext('2d');
-        const reportTypeSelect = document.getElementById('reportType');
+      function updateCharts(data) {
+        salesChart.data.labels = data.sales.labels;
+        salesChart.data.datasets[0].data = data.sales.data;
+        salesChart.update();
   
-        let salesChart;
-        let orderChart;
+        orderChart.data.labels = data.orders.labels;
+        orderChart.data.datasets[0].data = data.orders.data;
+        orderChart.update();
   
-        function updateCharts(data) {
-          salesChart.data.labels = data.sales.labels;
-          salesChart.data.datasets[0].data = data.sales.data;
-          salesChart.update();
+        document.querySelector('.total-orders').innerText = data.totalOrders;
+      }
   
-          orderChart.data.labels = data.orders.labels;
-          orderChart.data.datasets[0].data = data.orders.data;
-          orderChart.update();
-        }
-        // ...
+      function fetchData(reportType) {
+        fetch(`/admin/dashboard/data?reportType=${reportType}`)
+          .then(response => response.json())
+          .then(data => updateCharts(data))
+          .catch(error => console.error('Error fetching data:', error));
+      }
+  
+      reportTypeSelect.addEventListener('change', function () {
+        fetchData(this.value);
       });
-    </script>
-  </main>
+  
+      function initializeCharts() {
+        const chartOptions = {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        };
+  
+        salesChart = new Chart(salesCtx, {
+          type: 'bar',
+          data: {
+            labels: initialChartData.sales.labels,
+            datasets: [{
+              label: 'Total Sales',
+              data: initialChartData.sales.data,
+              backgroundColor: 'rgba(75, 192, 192, 0.2)',
+              borderColor: 'rgba(75, 192, 192, 1)',
+              borderWidth: 1
+            }]
+          },
+          options: chartOptions
+        });
+  
+        orderChart = new Chart(orderCtx, {
+          type: 'bar',
+          data: {
+            labels: initialChartData.orders.labels,
+            datasets: [{
+              label: 'Total Orders',
+              data: initialChartData.orders.data,
+              backgroundColor: 'rgba(153, 102, 255, 0.2)',
+              borderColor: 'rgba(153, 102, 255, 1)',
+              borderWidth: 1
+            }]
+          },
+          options: chartOptions
+        });
+  
+        document.querySelector('.total-orders').innerText = initialChartData.totalOrders;
+      }
+  
+      initializeCharts();
+    });
+  </script>
+</main>

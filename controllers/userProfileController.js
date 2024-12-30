@@ -4,7 +4,16 @@ const Products = require("../models/productModel");
 const Order = require("../models/orderModel");
 const Wallet = require('../models/walletModel');
 const Coupons = require('../models/couponModel');
+const PDFDocument = require('pdfkit');
+const crypto = require('crypto');
+const { razorpay_id, razorpay_secret } = process.env;
+const Razorpay = require('razorpay');
 
+
+const razorpayInstance = new Razorpay({
+    key_id: razorpay_id,
+    key_secret: razorpay_secret
+})
 
 const renderProfile = async(req,res)=>{
     try {
@@ -562,6 +571,258 @@ const renderCoupon = async(req,res)=>{
     }
 }
 
+const generateInvoice = async(req,res)=>{
+    try {
+        const { orderId, productId } = req.params;
+
+        const order = await Order.findById(orderId)
+            .populate('orderedItem.productId')
+            .populate('deliveryAddress');
+
+        if (!order) {
+            return res.status(404).send('Order not found');
+        }
+
+        const specificProduct = order.orderedItem.find(item => item.productId._id.toString() === productId);
+
+        if (!specificProduct) {
+            return res.status(404).send('Product not found in the order');
+        }
+
+        const doc = new PDFDocument({ margin: 50 });
+        let filename = `Invoice-${order._id}-${productId}.pdf`;
+        filename = encodeURIComponent(filename);
+
+        res.setHeader('Content-disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-type', 'application/pdf');
+
+        const generateHr = (y) => {
+            doc.strokeColor("#aaaaaa")
+                .lineWidth(1)
+                .moveTo(50, y)
+                .lineTo(550, y)
+                .stroke();
+        };
+
+        const formatCurrency = (amount) => {
+            return "Rs. " + (amount / 100).toFixed(2);
+        };
+
+        const formatDate = (date) => {
+            return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        };
+
+        let pageNumber = 1;
+        doc.on('pageAdded', () => {
+            pageNumber++;
+            doc.text(`Page ${pageNumber}`, 50, 750, { align: 'center' });
+        });
+
+        doc.fillColor("#444444")
+            .fontSize(28)
+            .text("Nashifa", 50, 50, { align: 'center' })
+            .fontSize(14)
+            .text("Invoice", 50, 80, { align: 'center' })
+            .moveDown();
+
+        doc.fontSize(20)
+            .text("Invoice", 50, 160);
+
+        generateHr(185);
+
+        const customerInformationTop = 200;
+        doc.fontSize(10)
+            .text("Invoice Number:", 50, customerInformationTop)
+            .font("Helvetica-Bold")
+            .text(order._id, 150, customerInformationTop)
+            .font("Helvetica")
+            .text("Invoice Date:", 50, customerInformationTop + 15)
+            .text(formatDate(order.createdAt), 150, customerInformationTop + 15)
+            .font("Helvetica-Bold")
+            .text("Shipping Address:", 300, customerInformationTop)
+            .font("Helvetica")
+            .text(order.deliveryAddress.address, 300, customerInformationTop + 15)
+            .text(`${order.deliveryAddress.locality}, ${order.deliveryAddress.city}`, 300, customerInformationTop + 30)
+            .text(`${order.deliveryAddress.state} - ${order.deliveryAddress.pincode}`, 300, customerInformationTop + 45);
+
+        generateHr(customerInformationTop + 70);
+
+        const invoiceTableTop = 330;
+
+        doc.font("Helvetica-Bold");
+        generateTableRow(
+            doc,
+            invoiceTableTop,
+            "Item",
+            "Quantity",
+            "Unit Price",
+            "Total"
+        );
+        generateHr(invoiceTableTop + 20);
+        doc.font("Helvetica");
+
+        const position = invoiceTableTop + 30;
+        generateTableRow(
+            doc,
+            position,
+            specificProduct.productId.name,
+            specificProduct.quantity,
+            formatCurrency(specificProduct.priceAtPurchase * 100),
+            formatCurrency(specificProduct.priceAtPurchase *specificProduct.quantity* 100)
+        );
+
+        generateHr(position + 20);
+
+        const subtotalPosition = position + 30;
+        generateTableRow(
+            doc,
+            subtotalPosition,
+            "",
+            "",
+            "Subtotal",
+            formatCurrency(specificProduct.priceAtPurchase *specificProduct.quantity* 100)
+        );
+
+        const discountPosition = subtotalPosition + 20;
+        const discount = (specificProduct.priceAtPurchase - specificProduct.discountedPrice)*specificProduct.quantity * 100;
+        generateTableRow(
+            doc,
+            discountPosition,
+            "",
+            "",
+            "Discount",
+            formatCurrency(discount)
+        );
+
+        const totalPosition = discountPosition + 25;
+        doc.font("Helvetica-Bold");
+        generateTableRow(
+            doc,
+            totalPosition,
+            "",
+            "",
+            "Total",
+            formatCurrency(specificProduct.discountedPrice *specificProduct.quantity * 100)
+        );
+        doc.font("Helvetica");
+
+        doc.fontSize(10)
+            .text(
+                "Thank you for your business. For any queries, please contact support@nashifa.com",
+                50,
+                700,
+                { align: "center", width: 500 }
+            );
+
+        doc.pipe(res);
+        doc.end();
+
+    } catch (error) {
+        console.log("Error in generateInvoice");
+        console.log(error.message);
+    }
+}
+
+function generateTableRow(doc, y, item, quantity, unitCost, total) {
+    doc.fontSize(10)
+        .text(item, 50, y)
+        .text(quantity, 350, y, { width: 90, align: "right" })
+        .text(unitCost, 410, y, { width: 90, align: "right" })
+        .text(total, 0, y, { align: "right" });
+}
+
+
+const initiatePayment = async(req,res)=>{
+    try {
+        const { orderId } = req.body;
+  
+
+        const orderDetails = await Order.findById(orderId);
+    
+        if (!orderDetails) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+    
+    
+        if (orderDetails.paymentStatus) {
+            return res.status(400).json({ message: "This order has already been paid" });
+        }
+    
+        const orderAmount = orderDetails.orderAmount;
+    
+    
+        if (orderAmount < 1) {
+            return res.status(400).json({ message: "Order amount must be at least ₹1" });
+        }
+    
+
+        const options = {
+            amount: Math.round(orderAmount * 100), 
+            currency: "INR",
+            receipt: `order_${orderId}`,
+        };
+    
+        razorpayInstance .orders.create(options, async (err, order) => {
+            if (err) {
+            console.error(err);
+            return res.status(500).json({ message: "Failed to create Razorpay order" });
+            }
+    
+            
+            orderDetails.razorpayOrderId = order.id;
+            await orderDetails.save();
+    
+            res.json({
+            success: true,
+            razorpayKey: process.env.RAZORPAY_KEY_ID,
+            amount: order.amount,
+            orderId: order.id,
+            });
+        });
+
+    } catch (error) {
+        console.log("Error in initiatePayment");
+        console.log(error.message);
+    }
+}
+
+const verifyPayment = async(req,res)=>{
+    try {
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = req.body;
+
+
+        const sign = razorpay_order_id + "|" + razorpay_payment_id;
+        const expectedSign = crypto.createHmac("sha256", razorpay_secret)
+            .update(sign.toString())
+            .digest("hex");
+
+        if (razorpay_signature === expectedSign) {
+
+            const updatedOrder = await Order.findByIdAndUpdate(orderId, { paymentStatus: true }, { new: true });
+            if (!updatedOrder) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Order not found."
+                });
+            }
+  
+        if (updatedOrder) {
+
+          updatedOrder.paymentStatus = true;
+          await updatedOrder.save();
+  
+          res.json({ success: true, message: "Payment verified and status updated" });
+        } else {
+          res.status(404).json({ success: false, message: "Order not found" });
+        }
+      } else {
+        res.status(400).json({ success: false, message: "Invalid payment verification" });
+      }
+    } catch (error) {
+        console.log("Error in verifyPayment");
+        console.log(error.message);
+    }
+}
 module.exports = {
     renderProfile,
     renderEditProfile,
@@ -578,4 +839,7 @@ module.exports = {
     cancelOrder,
     returnOrderRequest,
     renderCoupon,
+    generateInvoice,
+    initiatePayment,
+    verifyPayment,
 }

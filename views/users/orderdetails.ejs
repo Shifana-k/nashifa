@@ -391,7 +391,7 @@
         <!-- Show return order button -->
         <button type="button" class="btn btn-danger btn-custom return-order-btn" data-toggle="modal" data-target="#returnOrderModal">Return Order</button>
         <!-- Modal trigger button for add review -->
-        <button type="button" class="btn btn-primary btn-custom add-review-btn" data-toggle="modal" data-target="#addReviewModal">Add Review</button>
+        <!-- <button type="button" class="btn btn-primary btn-custom add-review-btn" data-toggle="modal" data-target="#addReviewModal">Add Review</button> -->
         <!-- Download invoice button -->
         <a href="/invoice/<%= orderData._id %>/<%= specificProduct.productId._id %>" class="btn btn-primary btn-custom download-invoice-btn">Download Invoice</a>
       <% } %>
@@ -579,7 +579,7 @@
           "key": data.razorpayKey,
           "amount": data.amount,
           "currency": "INR",
-          "name": "Your Company Name",
+          "name": "Nashifa",
           "description": "Order Payment",
           "order_id": data.orderId,
           "handler": function(response) {

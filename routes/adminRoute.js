@@ -19,6 +19,7 @@ admin_route.set('views','./views/admin')
 admin_route.get('/',adminController.renderLogin);
 
 admin_route.post('/login',adminController.renderDashboard);
+admin_route.get('/dashboard/data',adminController.generateData);
 admin_route.get('/dashboard',adminController.loadDashboard);
 admin_route.get('/logout',adminAuth.is_login,adminController.loadLogout);
 

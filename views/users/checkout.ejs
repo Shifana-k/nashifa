@@ -320,7 +320,14 @@ function checkTotalAmount() {
     const codOption = document.getElementById('cashOnDelivery');
     const codLabel = document.getElementById('codLabel');
 
-    
+    if (totalAmount > 1000) {
+        codOption.disabled = true;
+        codLabel.classList.add('strikethrough');
+    } else {
+        codOption.disabled = false;
+        codLabel.classList.remove('strikethrough');
+    }
+
 }
 
 
