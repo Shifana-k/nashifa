@@ -233,7 +233,7 @@ const loadCheckout = async(req,res)=>{
 
       const cartItems = await CartItem.find({ userId }).populate("product.productId");
       const userData = await User.findById(userId)
-      const addressData = await Address.find({ userId: { $in: [userId, ObjectId(userId)] } });
+      const addressData = await Address.find({ userId });
 
       const userCoupons = userData.availableCoupons;
       const allCoupons = await Coupon.find({ _id: { $in: userCoupons.map(coupon => coupon.couponId) } });
