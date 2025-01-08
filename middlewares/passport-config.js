@@ -12,8 +12,31 @@ passport.use(
         },
         async (accessToken, refreshToken, profile, done) => {
             try {
-                const existingUser = await User.findOne({ email: profile.emails[0].value });
-                if (existingUser) {
+                // Check if user already exists
+                let user = await User.findOne({ email: profile.emails[0].value });
+
+                if (!user) {
+                    // Create a new user if not found
+                    const newUser = new User({
+                        name: profile.displayName,
+                        email: profile.emails[0].value,
+                        is_verified: true,
+                        is_admin: false,
+                        isOAuth: true,
+                    });
+
+                    user = await newUser.save();
+
+                    // Create a wallet for the new user
+                    const wallet = new Wallet({
+                        userId: user._id,
+                        balance: 0,
+                        transactions: [],
+                    });
+
+                    await wallet.save();
+                } else {
+                    // If user exists but wallet doesn't, ensure wallet creation
                     const walletExists = await Wallet.findOne({ userId: user._id });
                     if (!walletExists) {
                         const wallet = new Wallet({
@@ -24,26 +47,9 @@ passport.use(
 
                         await wallet.save();
                     }
-                    return done(null, existingUser);
                 }
-                // Create a new user if not found
-                const newUser = new User({
-                    name: profile.displayName,
-                    email: profile.emails[0].value,
-                    is_verified: true, 
-                    is_admin: false,   
-                    isOAuth: true,     
-                });
-                user = await newUser.save();
-                const wallet = new Wallet({
-                    userId: user._id,
-                    balance: 0,
-                    transactions: [],
-                });
 
-                await wallet.save();
-
-                done(null, newUser);
+                done(null, user);
             } catch (error) {
                 done(error, null);
             }
