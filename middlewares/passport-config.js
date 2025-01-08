@@ -1,6 +1,7 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/userModel');
+const Wallet = require('../models/userModel');
 
 passport.use(
     new GoogleStrategy(
@@ -13,6 +14,16 @@ passport.use(
             try {
                 const existingUser = await User.findOne({ email: profile.emails[0].value });
                 if (existingUser) {
+                    const walletExists = await Wallet.findOne({ userId: user._id });
+                    if (!walletExists) {
+                        const wallet = new Wallet({
+                            userId: user._id,
+                            balance: 0,
+                            transactions: [],
+                        });
+
+                        await wallet.save();
+                    }
                     return done(null, existingUser);
                 }
                 // Create a new user if not found
@@ -23,7 +34,15 @@ passport.use(
                     is_admin: false,   
                     isOAuth: true,     
                 });
-                await newUser.save();
+                user = await newUser.save();
+                const wallet = new Wallet({
+                    userId: user._id,
+                    balance: 0,
+                    transactions: [],
+                });
+
+                await wallet.save();
+
                 done(null, newUser);
             } catch (error) {
                 done(error, null);
