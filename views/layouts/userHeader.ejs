@@ -128,7 +128,7 @@
                         <a href="#" class="search-switch"><img src="/userAssets/img/icon/search.png" alt=""></a>
                         <a href="/wishlist"><img src="/userAssets/img/icon/heart.png" alt=""></a>
                         <a href="/cart"><img src="/userAssets/img/icon/cart.png" alt=""></a>
-                        <div class="price"><%= cartCount%></div>
+                        <div class="price"><%= typeof cartCount !== 'undefined' ? cartCount : 0 %></div>
                     </div>
                 </div>
             </div>
