@@ -432,53 +432,7 @@ const cancelOrder = async(req,res)=>{
     }
 }
 
-// const returnOrderRequest = async(req,res)=>{
-//     try {
-//         console.log("returnnnnn");
-        
-//         const userId = req.session.userId;
-//         const { orderItemId, productId, returnReason } = req.body;
 
-//         if (!userId) {
-//             return res.status(401).json({ error: "Unauthorized" });
-//         }
-
-//         // Validate required fields
-//         if (!orderItemId || !productId || !returnReason) {
-//             return res.status(400).json({ error: "All fields (orderItemId, productId, returnReason) are required." });
-//         }
-        
-//         const order = await Order.findOne({ 'orderedItem._id': orderItemId, userId }).populate("orderedItem.productId");
-
-//         if (!order) {
-//             return res.status(404).json({ error: "Order not found or does not belong to the user" });
-//         }
-
-
-//         const orderedItem = order.orderedItem.find(item => item._id.toString() === orderItemId && item.productId._id.toString() === productId);
-
-//         if (!orderedItem) {
-//             return res.status(404).json({ error: "Ordered item not found" });
-//         }
-
-//         if (orderedItem.status === "Returned") {
-//             return res.status(400).json({ error: "Product is already Returned" });
-//         }
-
-       
-//         orderedItem.status = "returnrequested";
-//         orderedItem.reason = returnReason;
-
-  
-//         await order.save();
-
-//         res.status(200).json({ success: "Return request submitted successfully" });
-
-//     } catch (error) {
-//         console.log(error.message);
-        
-//     }
-// }
 
 const returnOrderRequest = async(req, res) => {
     try {

@@ -300,130 +300,6 @@ const renderSignUp = async(req,res)=>{
     }
 }
 
-// const insertUser = async (req,res) => {
-//     try {
-
-
-//         const { name, email, password, cpassword, mobile } = req.body;
-
-//         // check empty fields
-//         if (!name || !email || !password || !cpassword || !mobile) {
-//             return res.render("sign-up", {
-//                 message: "All fields are required.",
-//             });
-//         }
-
-//         // check whitespace
-//         if (/\s/.test(name) || /\s/.test(email) || /\s/.test(password) || /\s/.test(mobile)) {
-//             return res.render("sign-up", {
-//                 message: "Whitespace is not allowed in any field.",
-//             });
-//         }
-
-//         // Validate name 
-//         if (name.length < 3 || /[^a-zA-Z\s]/.test(name)) {
-//             return res.render("sign-up", {
-//                 message: "Name must be at least 3 characters long and contain only letters.",
-//             });
-//         }
-
-//         // Check if the email is already registered
-//         const existingUser = await User.findOne({ email: email });
-//         if (existingUser) {
-//             return res.render("sign-up", {
-//                 message: "Email is already registered.",
-//             });
-//         }
-
-
-//         // Validate email format
-//         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-//             return res.render("sign-up", {
-//                 message: "Please enter a valid email address.",
-//             });
-//         }
-
-//         // Check email ends with "@gmail.com"
-//         if (!email.endsWith("@gmail.com")) {
-//             return res.render("sign-up", {
-//                 message: "Please use a valid Gmail address",
-//             });
-//         }
-
-//         // Validate mobile number
-//         if (!/^[6-9]\d{9}$/.test(mobile)) {
-//             return res.render("sign-up", {
-//                 message: "Please enter a valid mobile number.",
-//             });
-//         }
-
-//         // Check if the mobile number is already registered
-//         const existingMobile = await User.findOne({ mobile: mobile });
-//         if (existingMobile) {
-//             return res.render("sign-up", {
-//                 message: "Mobile number is already registered.",
-//             });
-//         }
-
-
-//         if (password !== cpassword) {
-//             return res.render("sign-up", {
-//                 message: "Password and Confirm Password do not match",
-//             });
-//         }
-
-//         if (password.length < 6) {
-//             return res.render("sign-up", {
-//                 message: "Password must be at least 6 characters long",
-//             });
-//         }
-
-        
-
-//         const spassword = await securePassword(password);
-
-//         // Create and save the new user temporary
-//         const tempUserData = {
-//             name: name.trim(),
-//             email: email.trim(),
-//             password: spassword,
-//             mobile: mobile.trim(),
-//             is_admin: false,
-//             is_verified: false,
-
-//         };
-
-        
-//         const otp = generateOtp()
-//         // const userData = await user.save()
-//         await sendVerifyMail(name,email,null,otp)
-//         req.session.tempUser = {
-//             tempUserData,
-//             email,
-//             otp,
-//             expiresAt: Date.now() + 1 * 60 * 1000
-//         }
-
-        
-
-
-//         // if(userData){
-//         //     res.render('login',{message:"Your registration has been successfull."})
-//         // }
-//         // if (userData) {
-//         //     req.session.message = "Your registration has been successful."; // Set message in session
-//         //     return res.redirect('/sign-in'); // Use redirect
-//         // }
-//         // else{
-//         //     res.render('sign-up',{message:"Your registration has been failed"})
-//         // }
-//         res.redirect('/verify-otp');
-//     } catch (error) {
-//         console.log(error.message);
-//         res.render("sign-up", { message: "Something went wrong. Please try again later." });
-//     }
-// }
-
 const insertUser = async (req, res) => {
     try {
         const { name, email, mobile, password, cpassword } = req.body;
@@ -503,7 +379,6 @@ const verifyOtp = async (req, res) => {
 
         // Check if session data exists
         if (!req.session.tempUser) {
-            
             req.flash('error', 'Session expired. Please register again.');
             return res.redirect('/verify-otp');
         }
@@ -512,12 +387,11 @@ const verifyOtp = async (req, res) => {
 
         // Validate OTP
         if (Date.now() > expiresAt) {
-            
             req.flash('error', 'OTP expired. Please resend the OTP.');
             return res.redirect('/verify-otp');
         }
+
         if (otp !== storedOtp) {
-            
             req.flash('error', 'Invalid OTP. Please try again.');
             return res.redirect('/verify-otp');
         }
@@ -526,27 +400,43 @@ const verifyOtp = async (req, res) => {
         const newUser = new User(tempUserData);
         await newUser.save();
 
+        // Mark the user as verified
         await User.updateOne({ email: tempUserData.email }, { is_verified: true });
 
-        // const userData = tempUserData;
-        // const wallet = new Wallet({
-        //     userId: userData._id,
-        //     balance: 0,
-        //     transactions: [],
-        //   });
-        //   await wallet.save();
+        // Retrieve the saved user
+        const savedUser = await User.findOne({ email: tempUserData.email });
+
+        if (!savedUser) {
+            req.flash('error', 'User not found after saving. Please try again.');
+            return res.redirect('/verify-otp');
+        }
+
+        // Create a wallet for the verified user
+        try {
+            const wallet = new Wallet({
+                userId: savedUser._id,
+                balance: 0,
+                transactions: [],
+            });
+            await wallet.save();
+        } catch (err) {
+            // Rollback user creation if wallet creation fails
+            await User.deleteOne({ _id: savedUser._id });
+            req.flash('error', 'Failed to create wallet. Please try registering again.');
+            return res.redirect('/sign-up');
+        }
+
         // Clear session and redirect to login
         req.session.tempUser = null;
-        // req.session.message = "OTP verified successfully. Please log in to continue.";
         req.flash('success', 'OTP verified successfully. Please log in to continue.');
         res.redirect('/sign-in');
     } catch (error) {
-        console.log(error.message);
-        // res.render("verify-otp", { message: "Something went wrong. Please try again later." });
+        console.error(error.message);
         req.flash('error', 'Something went wrong. Please try again later.');
         res.redirect('/verify-otp');
     }
-}
+};
+
 
 const resendOtp = async (req, res) => {
     try {
@@ -572,63 +462,6 @@ const resendOtp = async (req, res) => {
         res.status(500).json({ success: false, message: "Something went wrong. Please try again later." });
     }
 }
-
-
-// const renderShop = async (req,res) => {
-//     try {
-//         const user = req.session.user_id ? await User.findById(req.session.user_id) : null;
-//         const categories = await Category.find( { is_listed:true } )
-//         const unblockedCategoryIds = categories.map((Category)=>Category._id);
-
-//         // Capture query params for search and sorting
-//         const { sortBy, search } = req.query;
-
-//         let sortOptions = {};
-//         let searchCondition = {};
-
-//         if (search) {
-//             searchCondition = {
-//                 name: { $regex: search, $options: 'i' }  // Case-insensitive search by product name
-//             };
-//         }
-
-//         // Sorting logic
-//         switch (sortBy) {
-//             case 'popularity':
-//                 sortOptions = { popularity: -1 };  // Sort by popularity (descending)
-//                 break;
-//             case 'price_low_to_high':
-//                 sortOptions = { price: 1 };  // Sort by price (ascending)
-//                 break;
-//             case 'price_high_to_low':
-//                 sortOptions = { price: -1 };  // Sort by price (descending)
-//                 break;
-//             case 'average_ratings':
-//                 sortOptions = { average_rating: -1 };  // Sort by ratings (descending)
-//                 break;
-//             case 'featured':
-//                 sortOptions = { featured: -1 };  // Featured products first (descending)
-//                 break;
-//             case 'new_arrivals':
-//                 sortOptions = { createdAt: -1 };  // Sort by creation date (newest first)
-//                 break;
-//             case 'a_to_z':
-//                 sortOptions = { name: 1 };  // Sort alphabetically (A-Z)
-//                 break;
-//             case 'z_to_a':
-//                 sortOptions = { name: -1 };  // Sort alphabetically (Z-A)
-//                 break;
-//             default:
-//                 sortOptions = {};  // Default no sorting
-//         }
-
-//         const productData = await Products.find( { is_listed:true, category:{$in:unblockedCategoryIds}, ...searchCondition } ).sort(sortOptions);
-//         const renderData = {productData,categories,search }
-//         res.render('shop',{user,renderData,sortBy})
-//     } catch (error) {
-//         console.log(error.message);
-//     }
-// }
 
 
 const generateProductFilter = async (search, category, unblockedCategoryIds, filters) => {
