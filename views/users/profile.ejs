@@ -66,15 +66,15 @@
         <div class="modal-body">
           <div class="form-group">
             <label for="currentPassword">Current Password</label>
-            <input type="password" class="form-control" id="currentPassword" name="current_password" required>
+            <input type="password" class="form-control" id="currentPassword" name="current_password">
           </div>
           <div class="form-group">
             <label for="newPassword">New Password</label>
-            <input type="password" class="form-control" id="newPassword" name="new_password" required>
+            <input type="password" class="form-control" id="newPassword" name="new_password">
           </div>
           <div class="form-group">
             <label for="confirmPassword">Confirm New Password</label>
-            <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required>
+            <input type="password" class="form-control" id="confirmPassword" name="confirm_password">
           </div>
         </div>
         <div class="modal-footer">
@@ -84,6 +84,26 @@
       </form>
     </div>
   </div>
+</div>
+
+<!-- Flash Messages -->
+<div class="container mt-3">
+  <% if (messages.error && messages.error.length > 0) { %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <%= messages.error[0] %>
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+  <% } %>
+  <% if (messages.success && messages.success.length > 0) { %>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      <%= messages.success[0] %>
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+  <% } %>
 </div>
 
 <!-- Personal info Section Begin -->
@@ -116,10 +136,10 @@
             <a href="#" id="changePasswordBtn">Change Password</a>
           </div>
           <p class="text-secondary text-muted">____________________________</p>
-          <div>
+          <!-- <div>
             <a href="/refferal">Referral</a>
           </div>
-          <p class="text-secondary text-muted">____________________________</p>
+          <p class="text-secondary text-muted">____________________________</p> -->
         </div>
         <div class="col-lg-8">
           <br>
@@ -167,9 +187,50 @@
 
 <!-- Custom JavaScript to handle the modal trigger -->
 <script>
-$(document).ready(function () {
-  $('#changePasswordBtn').click(function () {
-    $('#changePasswordModal').modal('show');
+  $(document).ready(function () {
+      $('#changePasswordBtn').click(function () {
+          $('#changePasswordModal').modal('show');
+      });
+  
+      // Handle form submission
+      $('form').on('submit', function(e) {
+          e.preventDefault();
+          
+          $.ajax({
+              type: 'POST',
+              url: '/change-password',
+              data: $(this).serialize(),
+              success: function(response) {
+                  $('#changePasswordModal').modal('hide');
+                  
+                  if (response.success) {
+                      Swal.fire({
+                          icon: 'success',
+                          title: 'Success!',
+                          text: response.message,
+                          showConfirmButton: false,
+                          timer: 1500
+                      }).then(() => {
+                          // Clear form fields
+                          $('form')[0].reset();
+                      });
+                  } else {
+                      Swal.fire({
+                          icon: 'error',
+                          title: 'Oops...',
+                          text: response.message
+                      });
+                  }
+              },
+              error: function() {
+                  $('#changePasswordModal').modal('hide');
+                  Swal.fire({
+                      icon: 'error',
+                      title: 'Oops...',
+                      text: 'Something went wrong! Please try again.'
+                  });
+              }
+          });
+      });
   });
-});
-</script>
+  </script>

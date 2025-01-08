@@ -6,6 +6,7 @@ const Wallet = require('../models/walletModel');
 const Coupons = require('../models/couponModel');
 const PDFDocument = require('pdfkit');
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 const { razorpay_id, razorpay_secret } = process.env;
 const Razorpay = require('razorpay');
 
@@ -823,6 +824,41 @@ const verifyPayment = async(req,res)=>{
         console.log(error.message);
     }
 }
+
+const changePassword = async (req, res) => {
+    try {
+        const { current_password, new_password, confirm_password } = req.body;
+        const userId = req.session.user_id;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.json({ success: false, message: 'User not found' });
+        }
+
+        const isMatch = await bcrypt.compare(current_password, user.password);
+        if (!isMatch) {
+            return res.json({ success: false, message: 'Current password is incorrect' });
+        }
+
+        if (new_password !== confirm_password) {
+            return res.json({ success: false, message: 'New passwords do not match' });
+        }
+
+        if (new_password === current_password) {
+            return res.json({ success: false, message: 'New password cannot be the same as the current password' });
+        }
+
+        const hashedPassword = await bcrypt.hash(new_password, 10);
+        await User.findByIdAndUpdate(userId, { password: hashedPassword });
+
+        return res.json({ success: true, message: 'Password changed successfully' });
+
+    } catch (error) {
+        console.error('Error updating password:', error);
+        return res.json({ success: false, message: 'An error occurred while changing the password' });
+    }
+};
+  
 module.exports = {
     renderProfile,
     renderEditProfile,
@@ -842,4 +878,5 @@ module.exports = {
     generateInvoice,
     initiatePayment,
     verifyPayment,
+    changePassword,
 }

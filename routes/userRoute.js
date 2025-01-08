@@ -89,6 +89,7 @@ user_route.get('/edit-address',profileController.renderEditAddress);
 user_route.post('/update-address',profileController.updateAddress);
 user_route.delete('/delete-address/:id',profileController.deleteAddress);
 user_route.get('/coupons',profileController.renderCoupon);
+user_route.post('/change-password',profileController.changePassword)
 
 /*---------------------------------Cart--------------------------------------------*/
 user_route.get('/cart',cartController.renderCart);
