@@ -525,8 +525,15 @@ const generateProductFilter = async (search, category, unblockedCategoryIds, fil
         }
     }
 
-    if (filters.size && filters.size.length > 0) {
-        filter.size = { $in: filters.size };
+    if (filters.size) {
+        // Handle both array and single string cases
+        const sizeFilter = Array.isArray(filters.size) ? filters.size : [filters.size];
+        if (sizeFilter.length > 0 && sizeFilter[0] !== '') {
+            // Convert sizes to lowercase for case-insensitive comparison
+            filter.size = { 
+                $in: sizeFilter.map(size => new RegExp(`^${size}$`, 'i')) 
+            };
+        }
     }
 
     if (filters.colors && filters.colors.length > 0) {
@@ -717,6 +724,7 @@ const renderShop = async (req, res) => {
           };
         })
       );
+      const selectedSize = Array.isArray(size) ? size[0] : size;
   
       const renderData = {
         productData: modifiedProductData,
@@ -725,6 +733,7 @@ const renderShop = async (req, res) => {
         currentPage: parseInt(page),
         totalPages,
         filters,
+        category,
         totalProducts,
         limit, 
         selectedSize: size || 'all',

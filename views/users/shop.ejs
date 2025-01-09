@@ -78,17 +78,28 @@
                                 <div id="collapseFour" class="collapse show" data-parent="#accordionExample">
                                     <div class="card-body">
                                         <div class="shop__sidebar__size">
-                                            
-                                            <label for="sm">s
-                                                <input type="radio" id="sm">
-                                            </label>
-                                            <label for="md">m
-                                                <input type="radio" id="md">
-                                            </label>
-                                            <label for="l">l
-                                                <input type="radio" id="l">
-                                            </label>
-                                            
+                                            <form id="sizeFilterForm" action="/shop" method="get">
+                                                <!-- Preserve existing query parameters -->
+                                                <input type="hidden" name="search" value="<%= renderData.search || '' %>">
+                                                <input type="hidden" name="category" value="<%= renderData.category || '' %>">
+                                                <input type="hidden" name="priceRange" value="<%= renderData.filters.priceRange || '' %>">
+                                                
+                                                <label for="size-s">s
+                                                    <input type="radio" id="size-s" name="size" value="s" 
+                                                        <%= renderData.selectedSize === 's' ? 'checked' : '' %>
+                                                        onchange="document.getElementById('sizeFilterForm').submit()">
+                                                </label>
+                                                <label for="size-m">m
+                                                    <input type="radio" id="size-m" name="size" value="m"
+                                                        <%= renderData.selectedSize === 'm' ? 'checked' : '' %>
+                                                        onchange="document.getElementById('sizeFilterForm').submit()">
+                                                </label>
+                                                <label for="size-l">l
+                                                    <input type="radio" id="size-l" name="size" value="l"
+                                                        <%= renderData.selectedSize === 'l' ? 'checked' : '' %>
+                                                        onchange="document.getElementById('sizeFilterForm').submit()">
+                                                </label>
+                                            </form>
                                         </div>
                                     </div>
                                 </div>

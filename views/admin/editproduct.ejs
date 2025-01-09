@@ -64,12 +64,12 @@
         <div class="mb-3">
           <label for="productSize" class="form-label">Size</label>
           <select class="form-control" id="productSize" name="size" required>
-            <option value="">Select a size</option>
-            <option value="small" <% if (productData.size === 'small') { %> selected <% } %>>Small</option>
-            <option value="medium" <% if (productData.size === 'medium') { %> selected <% } %>>Medium</option>
-            <option value="large" <% if (productData.size === 'large') { %> selected <% } %>>Large</option>
+              <option value="">Select a size</option>
+              <option value="s" <%= product.size === 's' ? 'selected' : '' %>>Small (S)</option>
+              <option value="m" <%= product.size === 'm' ? 'selected' : '' %>>Medium (M)</option>
+              <option value="l" <%= product.size === 'l' ? 'selected' : '' %>>Large (L)</option>
           </select>
-        </div>
+      </div>
 
         <!-- Main image -->
         <div class="mb-3">
