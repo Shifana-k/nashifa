@@ -126,4 +126,14 @@ user_route.post('/verifyPayment',profileController.verifyPayment);
 
 user_route.get('/invoice/:orderId/:productId',profileController.generateInvoice)
 
+
+user_route.get('*', (req, res, next) => {
+  if (req.url.startsWith('/admin')) {
+    return next();
+  }else if (req.url.startsWith('/auth/callback')) {
+    return next();
+  }
+  res.render('404'); 
+});
+
 module.exports = user_route
