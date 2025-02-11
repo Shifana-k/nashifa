@@ -73,37 +73,123 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
 $(document).ready(function() {
   const dateRangeSelect = $('#dateRange');
   const customDateModal = $('#customDateModal');
   const applyCustomDatesBtn = $('#applyCustomDates');
+  const startDateInput = $('#startDateModal');
+  const endDateInput = $('#endDateModal');
   const downloadPdfBtn = $('#downloadPdfBtn');
 
-  dateRangeSelect.on('change', function() {
+  let currentCustomStartDate = '';
+  let currentCustomEndDate = '';
+  let lastValidSelection = 'daily';
+
+    customDateModal.on('show.bs.modal', function() {
+      $('#startDateModal').val(currentCustomStartDate || '');
+      $('#endDateModal').val(currentCustomEndDate || '');
+    });
+
+    dateRangeSelect.on('change', function() {
     const selectedRange = $(this).val();
     if (selectedRange === 'custom') {
-      customDateModal.modal('show');
+      if (currentCustomStartDate && currentCustomEndDate) {
+        startDateInput.val(currentCustomStartDate);
+        endDateInput.val(currentCustomEndDate);
+      } else {
+        // Clear the inputs if no existing custom dates
+        startDateInput.val('');
+        endDateInput.val('');
+      }
+        customDateModal.modal('show');
     } else {
-      fetchAndDisplaySalesReport(selectedRange);
+        lastValidSelection = selectedRange;
+        currentCustomStartDate = '';
+        currentCustomEndDate = '';
+        fetchAndDisplaySalesReport(selectedRange);
     }
+});
+
+    applyCustomDatesBtn.click(function() {
+      const newStartDate = startDateInput.val();
+      const newEndDate = endDateInput.val();
+
+      if (!newStartDate || !newEndDate) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Invalid Date Range',
+          text: 'Please select both start and end dates.',
+          confirmButtonColor: '#3085d6'
+        });
+        return;
+      }
+
+      if (new Date(newEndDate) < new Date(newStartDate)) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Invalid Date Range',
+          text: 'End date must be after start date.',
+          confirmButtonColor: '#3085d6'
+        });
+        return;
+      }
+
+      currentCustomStartDate = newStartDate;
+      currentCustomEndDate = newEndDate;
+      lastValidSelection = 'custom';
+      
+      customDateModal.modal('hide');
+      fetchAndDisplaySalesReport('custom', currentCustomStartDate, currentCustomEndDate);
+    });
+
+
+  customDateModal.on('hidden.bs.modal', function() {
+        if (!currentCustomStartDate && !currentCustomEndDate) {
+          dateRangeSelect.val(lastValidSelection);
+        }
   });
 
-  applyCustomDatesBtn.click(function() {
-    const startDate = $('#startDateModal').val();
-    const endDate = $('#endDateModal').val();
-    customDateModal.modal('hide');
-    fetchAndDisplaySalesReport('custom', startDate, endDate);
+  customDateModal.on('show.bs.modal', function() {
+    startDateInput.val(currentCustomStartDate);
+    endDateInput.val(currentCustomEndDate);
   });
 
   downloadPdfBtn.click(function() {
+    const currentDateRange = dateRangeSelect.val();
+    let startDate = null;
+    let endDate = null;
+    
+    if (currentDateRange === 'custom') {
+        startDate = $('#startDateModal').val();
+        endDate = $('#endDateModal').val();
+    }
+    
     $(this).text('Generating PDF...').prop('disabled', true);
-    fetch('/admin/downloadsalesreport')
-      .then(response => {
-        if (!response.ok) throw new Error('Network response was not ok');
+    
+    
+    fetch('/admin/downloadsalesreport', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            dateRange: currentDateRange,
+            startDate: startDate,
+            endDate: endDate
+        })
+    })
+    .then(response => {
+      if (response.status === 404) {
+            throw new Error('No data available');
+        }
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
         return response.blob();
-      })
+    })
       .then(blob => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -115,8 +201,15 @@ $(document).ready(function() {
       })
       .catch(error => {
         console.error('Error:', error);
-        alert('Failed to download PDF. Please try again.');
-      })
+        Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: error.message === 'No data available' 
+                ? 'No sales data available for the selected date range.'
+                : 'Failed to download PDF. Please try again.',
+            confirmButtonColor: '#3085d6'
+        });
+    })
       .finally(() => {
         $(this).text('Download PDF').prop('disabled', false);
       });
@@ -125,12 +218,37 @@ $(document).ready(function() {
   const downloadExcelBtn = $('#downloadExcelBtn');
 
     downloadExcelBtn.click(function() {
-        $(this).text('Generating Excel...').prop('disabled', true);
-        fetch('/admin/downloadsalesexcel')
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.blob();
-            })
+      const currentDateRange = dateRangeSelect.val();
+    let startDate = null;
+    let endDate = null;
+    
+    if (currentDateRange === 'custom') {
+        startDate = $('#startDateModal').val();
+        endDate = $('#endDateModal').val();
+    }
+    
+    $(this).text('Generating Excel...').prop('disabled', true);
+    
+    fetch('/admin/downloadsalesexcel', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            dateRange: currentDateRange,
+            startDate: startDate,
+            endDate: endDate
+        })
+    })
+    .then(response => {
+      if (response.status === 404) {
+            throw new Error('No data available');
+        }
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.blob();
+    })
             .then(blob => {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -142,8 +260,15 @@ $(document).ready(function() {
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Failed to download Excel. Please try again.');
-            })
+                Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: error.message === 'No data available' 
+                    ? 'No sales data available for the selected date range.'
+                    : 'Failed to download Excel. Please try again.',
+                confirmButtonColor: '#3085d6'
+            });
+          })
             .finally(() => {
                 $(this).text('Download Excel').prop('disabled', false);
             });

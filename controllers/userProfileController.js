@@ -394,7 +394,7 @@ const cancelOrder = async(req,res)=>{
             return res.status(400).json({ error: "Product is already cancelled" });
         }
 
-        const refundAmount = order.deliveryCharge ? orderedItem.totalProductAmount * orderedItem.quantity + order.deliveryCharge : orderedItem.totalProductAmount * orderedItem.quantity;
+        const refundAmount = order.deliveryCharge ? orderedItem.totalProductAmount + order.deliveryCharge : orderedItem.totalProductAmount;
 
         orderedItem.status = "Cancelled";
         orderedItem.reason = cancelReason;

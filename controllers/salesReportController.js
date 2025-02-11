@@ -21,8 +21,11 @@ const getQueryByDateRange = (dateRange, startDate, endDate) => {
   
     if (dateRange === "custom" && startDate && endDate) {
       query = {
-        createdAt: { $gte: new Date(startDate), $lte: new Date(endDate) },
-      };
+        createdAt: { 
+            $gte: new Date(startDate), 
+            $lte: moment(endDate).endOf('day').toDate() 
+        },
+    };
     } else if (dateRange === "daily") {
       query = {
         createdAt: {
@@ -36,6 +39,13 @@ const getQueryByDateRange = (dateRange, startDate, endDate) => {
           $gte: now.startOf("week").toDate(),
           $lte: now.endOf("week").toDate(),
         },
+      };
+    } else if (dateRange === "monthly") {
+      query = {
+          createdAt: {
+              $gte: now.startOf("month").toDate(),
+              $lte: now.endOf("month").toDate(),
+          },
       };
     } else if (dateRange === "yearly") {
       query = {
@@ -113,61 +123,259 @@ const sortReport = async(req,res)=>{
 }
 
 
+// const downloadSalesReport = async(req,res)=>{
+//     try {
+//         const orders = await Order.find().populate('orderedItem.productId').populate('userId');
+  
+//       const salesData = orders.flatMap(order =>
+//         order.orderedItem.map(item => ({
+//           saleId: order._id,
+//           customerName: order.userId?.name || 'Unknown',
+//           productName: item.productId?.name || 'No Product Name',
+//           quantity: item.quantity,
+//           price: item.productId?.price || 0,
+//           totalAmount: (item.quantity * (item.productId?.price || 0)),
+//           discount: order.discount || 0,
+//           finalAmount: (item.quantity * (item.productId?.price || 0)) - (order.discount || 0),
+//           saleDate: order.createdAt
+//         }))
+//       );
+  
+//       const doc = new PDFDocument({ margin: 50, size: 'A4' });
+//       const reportsDir = path.join(__dirname, '../public/reports');
+  
+//       await fsPromises.mkdir(reportsDir, { recursive: true });
+  
+//       const filePath = path.join(reportsDir, `salesReport_${moment().format('YYYYMMDD_HHmmss')}.pdf`);
+//       const writeStream = fs.createWriteStream(filePath);
+//       doc.pipe(writeStream);
+  
+     
+//       const generateHr = (y) => {
+//         doc.strokeColor("#aaaaaa")
+//            .lineWidth(1)
+//            .moveTo(50, y)
+//            .lineTo(550, y)
+//            .stroke();
+//       }
+  
+//       const formatCurrency = (amount) => {
+//         if (typeof amount !== 'number' || isNaN(amount)) {
+//           return 'Rs. 0.00'; 
+//         }
+//         return "Rs. " + amount.toFixed(2);
+//       }
+  
+//       const formatDate = (date) => {
+//         return moment(date).format('DD/MM/YYYY');
+//       }
+  
+  
+//       let pageNumber = 1;
+//       doc.on('pageAdded', () => {
+//         pageNumber++;
+//         doc.text(`Page ${pageNumber}`, 50, 750, { align: 'center' });
+//       });
+  
+  
+//       doc.fillColor("#444444")
+//          .fontSize(28)
+//          .text("Nashifa", 50, 50, { align: 'center' })
+//          .fontSize(20)
+//          .text("Sales Report", 50, 80, { align: 'center' })
+//          .fontSize(10)
+//          .text(`Generated on: ${moment().format('MMMM Do YYYY, h:mm:ss a')}`, 50, 100, { align: 'center' });
+  
+//       generateHr(120);
+  
+   
+//       const reportDetailsTop = 140;
+//       const startDate = formatDate(salesData[0]?.saleDate);
+//       const endDate = formatDate(salesData[salesData.length - 1]?.saleDate);
+//       doc.fontSize(10)
+//          .text("Report Period:", 50, reportDetailsTop)
+//          .text(`From: ${startDate}`, 150, reportDetailsTop)
+//          .text(`To: ${endDate}`, 300, reportDetailsTop)
+//          .text("Total Orders:", 50, reportDetailsTop + 20)
+//          .text(orders.length.toString(), 150, reportDetailsTop + 20)
+//          .text("Total Products Sold:", 50, reportDetailsTop + 40)
+//          .text(salesData.reduce((sum, sale) => sum + sale.quantity, 0).toString(), 150, reportDetailsTop + 40);
+  
+//       generateHr(reportDetailsTop + 60);
+  
+    
+//       const tableTop = 240;
+//       let y = tableTop;
+  
+//       const generateTableRow = (y, saleId, customer, product, qty, price, total, discount, final, date) => {
+//         doc.fontSize(9)
+//            .text(saleId, 50, y, { width: 70 })
+//            .text(customer, 120, y, { width: 100 })
+//            .text(product, 200, y, { width: 100 })
+//            .text(qty.toString(), 240, y, { width: 50, align: 'right' })
+//            .text(price, 290, y, { width: 60, align: 'right' })
+//            .text(total, 350, y, { width: 60, align: 'right' })
+//            .text(discount, 400, y, { width: 60, align: 'right' })
+//            .text(final, 450, y, { width: 60, align: 'right' })
+//            .text(date, 520, y, { width: 60 });
+//       };
+  
+      
+//       doc.font('Helvetica-Bold');
+//       generateTableRow(y, 'Sale ID', 'Customer', 'Product', 'Qty', 'Price', 'Total', 'Discount',
+//       'Final', 'Date');
+//       generateHr(y + 20);
+//       y += 30;
+  
+//       doc.font('Helvetica');
+//       let totalSales = 0;
+//       let totalDiscounts = 0;
+//       salesData.forEach((sale) => {
+//         generateTableRow(
+//           y,
+//           sale.saleId.toString().slice(-6),
+//           sale.customerName.slice(0, 15),
+//           sale.productName.slice(0, 15),
+//           sale.quantity,
+//           formatCurrency(sale.price),
+//           formatCurrency(sale.totalAmount),
+//           formatCurrency(sale.discount),
+//           formatCurrency(sale.finalAmount),
+//           formatDate(sale.saleDate)
+//         );
+//         totalSales += sale.totalAmount;
+//         totalDiscounts += sale.discount;
+//         y += 20;
+//         generateHr(y);
+//         y += 10;
+  
+//         if (y > 700) {
+//           doc.addPage();
+//           y = 50;
+//           generateHr(y - 10);
+//         }
+//       });
+  
+  
+//       y += 10;
+//       doc.font('Helvetica-Bold');
+//       doc.text(`Total Sales: ${formatCurrency(totalSales)}`, 390, y);
+//       doc.text(`Total Discounts: ${formatCurrency(totalDiscounts)}`, 390, y + 20);
+      
+  
+//       doc.fontSize(10)
+//          .text(
+//           "© 2024 Nashifa. All rights reserved.",
+//           50,
+//           730,
+//           { align: "center", width: 500 }
+//         );
+  
+//       doc.end();
+  
+//       writeStream.on('finish', () => {
+//         res.setHeader('Content-Type', 'application/pdf');
+//         res.setHeader('Content-Disposition', `attachment; filename=${path.basename(filePath)}`);
+//         res.sendFile(filePath, (err) => {
+//           if (err) {
+//             console.error("Error sending file:", err);
+//             res.status(500).send("Error downloading PDF");
+//           }
+         
+//           fs.unlinkSync(filePath);
+//         });
+//       });
+  
+//       writeStream.on('error', (err) => {
+//         console.error("Error writing PDF:", err);
+//         res.status(500).send("Error generating PDF");
+//       });
+  
+//     } catch (error) {
+//       console.error("Error in downloadSalesReport:", error);
+//       res.status(500).send("Internal Server Error");
+//     }
+// }
+
 const downloadSalesReport = async(req,res)=>{
-    try {
-        const orders = await Order.find().populate('orderedItem.productId').populate('userId');
-  
+  try {
+
+    console.log("Received date parameters:", req.body);
+      // Get date range parameters with default values
+       // Get date range parameters
+        const { dateRange, startDate, endDate } = req.body;
+        
+        // Generate the date filter query
+        const query = getQueryByDateRange(dateRange, startDate, endDate);
+
+        console.log("Generated query:", query); // Debug log
+        
+      
+      // Apply the query filter to Order.find()
+      const orders = await Order.find(query)
+          .populate('orderedItem.productId')
+          .populate('userId')
+          .sort({ createdAt: 1 }); // Sort by date ascending
+
+        console.log(`Found ${orders.length} orders`); // Debug log
+        
+        if (orders.length === 0) {
+            return res.status(404).send("No sales data found for the selected period");
+        }
+
       const salesData = orders.flatMap(order =>
-        order.orderedItem.map(item => ({
-          saleId: order._id,
-          customerName: order.userId?.name || 'Unknown',
-          productName: item.productId?.name || 'No Product Name',
-          quantity: item.quantity,
-          price: item.productId?.price || 0,
-          totalAmount: (item.quantity * (item.productId?.price || 0)),
-          discount: order.discount || 0,
-          finalAmount: (item.quantity * (item.productId?.price || 0)) - (order.discount || 0),
-          saleDate: order.createdAt
-        }))
+          order.orderedItem.map(item => ({
+              saleId: order._id,
+              customerName: order.userId?.name || 'Unknown',
+              productName: item.productId?.name || 'No Product Name',
+              quantity: item.quantity,
+              price: item.productId?.price || 0,
+              totalAmount: (item.quantity * (item.productId?.price || 0)),
+              discount: order.discount || 0,
+              finalAmount: (item.quantity * (item.productId?.price || 0)) - (order.discount || 0),
+              saleDate: order.createdAt
+          }))
       );
-  
+
+      const actualStartDate = orders[0].createdAt;
+      const actualEndDate = orders[orders.length - 1].createdAt;
+
       const doc = new PDFDocument({ margin: 50, size: 'A4' });
       const reportsDir = path.join(__dirname, '../public/reports');
-  
+
       await fsPromises.mkdir(reportsDir, { recursive: true });
-  
+
       const filePath = path.join(reportsDir, `salesReport_${moment().format('YYYYMMDD_HHmmss')}.pdf`);
       const writeStream = fs.createWriteStream(filePath);
       doc.pipe(writeStream);
-  
-     
+
+    
+      
       const generateHr = (y) => {
-        doc.strokeColor("#aaaaaa")
-           .lineWidth(1)
-           .moveTo(50, y)
-           .lineTo(550, y)
-           .stroke();
+          doc.strokeColor("#aaaaaa")
+             .lineWidth(1)
+             .moveTo(50, y)
+             .lineTo(550, y)
+             .stroke();
       }
-  
+
       const formatCurrency = (amount) => {
-        if (typeof amount !== 'number' || isNaN(amount)) {
-          return 'Rs. 0.00'; 
-        }
-        return "Rs. " + amount.toFixed(2);
+          if (typeof amount !== 'number' || isNaN(amount)) {
+              return 'Rs. 0.00'; 
+          }
+          return "Rs. " + amount.toFixed(2);
       }
-  
+
       const formatDate = (date) => {
-        return moment(date).format('DD/MM/YYYY');
+          return moment(date).format('DD/MM/YYYY');
       }
-  
-  
+
       let pageNumber = 1;
       doc.on('pageAdded', () => {
-        pageNumber++;
-        doc.text(`Page ${pageNumber}`, 50, 750, { align: 'center' });
+          pageNumber++;
+          doc.text(`Page ${pageNumber}`, 50, 750, { align: 'center' });
       });
-  
-  
+
       doc.fillColor("#444444")
          .fontSize(28)
          .text("Nashifa", 50, 50, { align: 'center' })
@@ -175,84 +383,91 @@ const downloadSalesReport = async(req,res)=>{
          .text("Sales Report", 50, 80, { align: 'center' })
          .fontSize(10)
          .text(`Generated on: ${moment().format('MMMM Do YYYY, h:mm:ss a')}`, 50, 100, { align: 'center' });
-  
+
       generateHr(120);
-  
-   
+
+      // Update report period display with better error handling
       const reportDetailsTop = 140;
-      const startDate = formatDate(salesData[0]?.saleDate);
-      const endDate = formatDate(salesData[salesData.length - 1]?.saleDate);
+      let periodText = "";
+      if (dateRange === 'custom') {
+        periodText = `Custom Period - From: ${formatDate(actualStartDate)} To: ${formatDate(actualEndDate)}`;
+    } else if (dateRange === 'daily') {
+        periodText = `Daily Report - ${formatDate(actualStartDate)}`;
+    } else if (dateRange === 'weekly') {
+        periodText = `Weekly Report - From: ${formatDate(actualStartDate)} To: ${formatDate(actualEndDate)}`;
+    } else if (dateRange === 'yearly') {
+        periodText = `Yearly Report - ${moment(actualStartDate).format('YYYY')}`;
+    } else {
+        periodText = `From: ${formatDate(actualStartDate)} To: ${formatDate(actualEndDate)}`;
+    }
+
       doc.fontSize(10)
          .text("Report Period:", 50, reportDetailsTop)
-         .text(`From: ${startDate}`, 150, reportDetailsTop)
-         .text(`To: ${endDate}`, 300, reportDetailsTop)
+         .text(periodText, 150, reportDetailsTop)
          .text("Total Orders:", 50, reportDetailsTop + 20)
          .text(orders.length.toString(), 150, reportDetailsTop + 20)
          .text("Total Products Sold:", 50, reportDetailsTop + 40)
          .text(salesData.reduce((sum, sale) => sum + sale.quantity, 0).toString(), 150, reportDetailsTop + 40);
-  
+
+      
       generateHr(reportDetailsTop + 60);
-  
-    
+
       const tableTop = 240;
       let y = tableTop;
-  
+
       const generateTableRow = (y, saleId, customer, product, qty, price, total, discount, final, date) => {
-        doc.fontSize(9)
-           .text(saleId, 50, y, { width: 70 })
-           .text(customer, 120, y, { width: 100 })
-           .text(product, 200, y, { width: 100 })
-           .text(qty.toString(), 240, y, { width: 50, align: 'right' })
-           .text(price, 290, y, { width: 60, align: 'right' })
-           .text(total, 350, y, { width: 60, align: 'right' })
-           .text(discount, 400, y, { width: 60, align: 'right' })
-           .text(final, 450, y, { width: 60, align: 'right' })
-           .text(date, 520, y, { width: 60 });
+          doc.fontSize(9)
+             .text(saleId, 50, y, { width: 70 })
+             .text(customer, 120, y, { width: 100 })
+             .text(product, 200, y, { width: 100 })
+             .text(qty.toString(), 240, y, { width: 50, align: 'right' })
+             .text(price, 290, y, { width: 60, align: 'right' })
+             .text(total, 350, y, { width: 60, align: 'right' })
+             .text(discount, 400, y, { width: 60, align: 'right' })
+             .text(final, 450, y, { width: 60, align: 'right' })
+             .text(date, 520, y, { width: 60 });
       };
-  
-      
+
       doc.font('Helvetica-Bold');
       generateTableRow(y, 'Sale ID', 'Customer', 'Product', 'Qty', 'Price', 'Total', 'Discount',
       'Final', 'Date');
       generateHr(y + 20);
       y += 30;
-  
+
       doc.font('Helvetica');
       let totalSales = 0;
       let totalDiscounts = 0;
       salesData.forEach((sale) => {
-        generateTableRow(
-          y,
-          sale.saleId.toString().slice(-6),
-          sale.customerName.slice(0, 15),
-          sale.productName.slice(0, 15),
-          sale.quantity,
-          formatCurrency(sale.price),
-          formatCurrency(sale.totalAmount),
-          formatCurrency(sale.discount),
-          formatCurrency(sale.finalAmount),
-          formatDate(sale.saleDate)
-        );
-        totalSales += sale.totalAmount;
-        totalDiscounts += sale.discount;
-        y += 20;
-        generateHr(y);
-        y += 10;
-  
-        if (y > 700) {
-          doc.addPage();
-          y = 50;
-          generateHr(y - 10);
-        }
+          generateTableRow(
+              y,
+              sale.saleId.toString().slice(-6),
+              sale.customerName.slice(0, 15),
+              sale.productName.slice(0, 15),
+              sale.quantity,
+              formatCurrency(sale.price),
+              formatCurrency(sale.totalAmount),
+              formatCurrency(sale.discount),
+              formatCurrency(sale.finalAmount),
+              formatDate(sale.saleDate)
+          );
+          totalSales += sale.totalAmount;
+          totalDiscounts += sale.discount;
+          y += 20;
+          generateHr(y);
+          y += 10;
+
+          if (y > 700) {
+              doc.addPage();
+              y = 50;
+              generateHr(y - 10);
+          }
       });
-  
-  
+
       y += 10;
       doc.font('Helvetica-Bold');
       doc.text(`Total Sales: ${formatCurrency(totalSales)}`, 390, y);
       doc.text(`Total Discounts: ${formatCurrency(totalDiscounts)}`, 390, y + 20);
       
-  
       doc.fontSize(10)
          .text(
           "© 2024 Nashifa. All rights reserved.",
@@ -260,37 +475,40 @@ const downloadSalesReport = async(req,res)=>{
           730,
           { align: "center", width: 500 }
         );
-  
+
       doc.end();
-  
+
       writeStream.on('finish', () => {
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=${path.basename(filePath)}`);
-        res.sendFile(filePath, (err) => {
-          if (err) {
-            console.error("Error sending file:", err);
-            res.status(500).send("Error downloading PDF");
-          }
-         
-          fs.unlinkSync(filePath);
-        });
+          res.setHeader('Content-Type', 'application/pdf');
+          res.setHeader('Content-Disposition', `attachment; filename=${path.basename(filePath)}`);
+          res.sendFile(filePath, (err) => {
+              if (err) {
+                  console.error("Error sending file:", err);
+                  res.status(500).send("Error downloading PDF");
+              }
+              fs.unlinkSync(filePath);
+          });
       });
-  
+
       writeStream.on('error', (err) => {
-        console.error("Error writing PDF:", err);
-        res.status(500).send("Error generating PDF");
+          console.error("Error writing PDF:", err);
+          res.status(500).send("Error generating PDF");
       });
-  
-    } catch (error) {
+
+  } catch (error) {
       console.error("Error in downloadSalesReport:", error);
       res.status(500).send("Internal Server Error");
-    }
+  }
 }
 
 
 const downloadSalesExcel = async(req,res)=>{
   try {
-    const orders = await Order.find()
+
+    const { dateRange, startDate, endDate } = req.body;
+    const query = getQueryByDateRange(dateRange, startDate, endDate);
+
+    const orders = await Order.find(query)
             .populate('orderedItem.productId')
             .populate('userId');
 
